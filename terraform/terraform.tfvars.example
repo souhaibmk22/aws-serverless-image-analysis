@@ -1,0 +1,6 @@
+# Example Terraform variables configuration
+aws_region           = "eu-west-3"
+project_name         = "image-analysis-pipeline"
+environment          = "dev"
+alert_email          = "your-email@example.com"
+confidence_threshold = 75.0

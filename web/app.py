@@ -46,8 +46,6 @@ def try_real_aws_rekognition(file_bytes: bytes):
     """
     try:
         import boto3
-        from botocore.exceptions import NoCredentialsError, ClientError
-
         client = boto3.client("rekognition", region_name=AWS_REGION)
         
         # 1. Detect Labels
@@ -74,8 +72,10 @@ def try_real_aws_rekognition(file_bytes: bytes):
         is_flagged = len(moderation_labels) > 0
         return labels, is_flagged, moderation_labels, True
 
-    except (ImportError, NoCredentialsError, ClientError, Exception) as e:
+    except Exception:
         # Gracefully fall back to local/browser AI
+        return None
+    except BaseException:
         return None
 
 

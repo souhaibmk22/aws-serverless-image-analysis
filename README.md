@@ -114,12 +114,3 @@ python3 -m unittest discover tests
 
 ---
 
-## 💼 How to Present This on Your Resume (CV)
-
-### **Bullet Points for CV / LinkedIn:**
-
-> **Serverless Event-Driven Image Analysis Pipeline** *(AWS, Terraform, Python)*
-> - Designed and deployed an end-to-end event-driven architecture using **Amazon S3**, **AWS Lambda (Python)**, **Amazon DynamoDB**, and **Amazon SNS**.
-> - Integrated **Amazon Rekognition** to automate computer vision object detection and content moderation on uploaded assets.
-> - Provisioned 100% of cloud resources through **Terraform (Infrastructure as Code)** following AWS Well-Architected security best practices (IAM Least Privilege, S3 encryption).
-> - Implemented automated CI/CD unit testing pipelines using **GitHub Actions**.

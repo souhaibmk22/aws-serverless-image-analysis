@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Serverless Image Analysis - Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .step-active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.12); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+    .step-success { border-color: #10b981; background-color: rgba(16, 185, 129, 0.1); }
+    .step-flagged { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.15); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+          <i class="fa-solid fa-cloud text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white tracking-wide">AWS Serverless Pipeline</h1>
+          <p class="text-xs text-slate-400">Vision par Ordinateur & Ingestion Automatisée (S3 + Lambda + Rekognition + DynamoDB)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Pipeline Actif
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+    
+    <!-- Hero / Upload Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Drag & Drop Upload Zone -->
+      <div class="lg:col-span-5 bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-cloud-arrow-up text-amber-500"></i>
+              Déposez votre photo
+            </h2>
+            <span class="text-xs text-slate-500">JPG, PNG, WEBP</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4">
+            Choisissez n'importe quelle image de votre ordinateur pour tester l'analyse.
+          </p>
+
+          <!-- Drop Box -->
+          <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-amber-500/70 bg-slate-950/60 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group">
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+            
+            <div id="dropEmptyState" class="space-y-3">
+              <div class="w-14 h-14 mx-auto rounded-full bg-slate-800 group-hover:bg-amber-500/10 group-hover:text-amber-400 text-slate-400 flex items-center justify-center text-xl transition">
+                <i class="fa-regular fa-image"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-200">Glissez-déposez une image ici</p>
+                <p class="text-xs text-slate-500 mt-0.5">ou cliquez pour parcourir vos fichiers</p>
+              </div>
+            </div>
+
+            <!-- Preview State (Hidden by default) -->
+            <div id="dropPreviewState" class="hidden w-full flex flex-col items-center space-y-3">
+              <div class="relative max-h-48 rounded-lg overflow-hidden border border-slate-700 shadow-md">
+                <img id="imagePreview" src="" alt="Aperçu" class="max-h-48 object-contain rounded-lg">
+              </div>
+              <div class="text-xs text-center truncate max-w-full px-2">
+                <span id="fileNameDisplay" class="font-semibold text-slate-200 block truncate"></span>
+                <span id="fileSizeDisplay" class="text-slate-500 text-[11px]"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="analyzeBtn" disabled class="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-slate-800 text-slate-500 cursor-not-allowed transition duration-200 flex items-center justify-center gap-2 shadow-lg">
+          <i class="fa-solid fa-play"></i>
+          <span>Sélectionnez d'abord une image</span>
+        </button>
+      </div>
+
+      <!-- Live Architecture & Pipeline Reactivity (Right Column) -->
+      <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-network-wired text-blue-400"></i>
+              État d'exécution du Pipeline AWS
+            </h2>
+            <p class="text-xs text-slate-400">Progression événementielle en temps réel</p>
+          </div>
+          <span id="overallStatusBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400">
+            En attente
+          </span>
+        </div>
+
+        <!-- Pipeline Steps Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          
+          <!-- Step 1: S3 -->
+          <div id="stepS3" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <i class="fa-solid fa-bucket text-amber-500 text-sm"></i>
+              <span id="badgeS3" class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Standby</span>
+            </div>
+            <div class="text-xs font-bold text-slate-200">1. Amazon S3</div>
+            <div id="descS3" class="text-[10px] text-slate-500 mt-1 truncate">Ingestion Bucket</div>
+          </div>
+
+          <!-- Step 2: Lambda -->
+          <div id="stepLambda" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <i class="fa-solid fa-bolt text-yellow-400 text-sm"></i>
+              <span id="badgeLambda" class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Standby</span>
+            </div>
+            <div class="text-xs font-bold text-slate-200">2. AWS Lambda</div>
+            <div id="descLambda" class="text-[10px] text-slate-500 mt-1 truncate">Python 3.12</div>
+          </div>
+
+          <!-- Step 3: Rekognition -->
+          <div id="stepRekognition" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <i class="fa-solid fa-brain text-purple-400 text-sm"></i>
+              <span id="badgeRekognition" class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Standby</span>
+            </div>
+            <div class="text-xs font-bold text-slate-200">3. Rekognition</div>
+            <div id="descRekognition" class="text-[10px] text-slate-500 mt-1 truncate">Vision IA</div>
+          </div>
+
+          <!-- Step 4: DynamoDB -->
+          <div id="stepDynamoDB" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <i class="fa-solid fa-database text-blue-400 text-sm"></i>
+              <span id="badgeDynamoDB" class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Standby</span>
+            </div>
+            <div class="text-xs font-bold text-slate-200">4. DynamoDB</div>
+            <div id="descDynamoDB" class="text-[10px] text-slate-500 mt-1 truncate">Table NoSQL</div>
+          </div>
+
+          <!-- Step 5: SNS -->
+          <div id="stepSNS" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all col-span-2 sm:col-span-1">
+            <div class="flex items-center justify-between mb-1">
+              <i class="fa-solid fa-envelope text-red-400 text-sm"></i>
+              <span id="badgeSNS" class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Standby</span>
+            </div>
+            <div class="text-xs font-bold text-slate-200">5. SNS Alert</div>
+            <div id="descSNS" class="text-[10px] text-slate-500 mt-1 truncate">Filtre sécurité</div>
+          </div>
+        </div>
+
+        <!-- Detected Labels Display -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Étiquettes détectées par l'IA
+            </h3>
+            <span id="labelsCount" class="text-xs text-blue-400 font-semibold">0 label</span>
+          </div>
+
+          <div id="labelsContainer" class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 min-h-[110px] flex items-center justify-center text-xs text-slate-500">
+            Déposez une image et cliquez sur Analyser pour voir les étiquettes en direct.
+          </div>
+        </div>
+
+        <!-- Alert Notification (Appears only if sensitive/flagged) -->
+        <div id="alertBanner" class="hidden bg-red-950/40 border border-red-500/50 rounded-xl p-4 animate-bounce">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="text-xs space-y-1">
+              <div class="font-bold text-red-300">Alerte de Sécurité Émise par Amazon SNS</div>
+              <p class="text-red-200/80" id="alertMessageText">
+                Contenu modéré ou sensible détecté sur l'image. Un email a été dispatché à l'administrateur.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DynamoDB Table Live Records (History) -->
+    <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-emerald-400"></i>
+            Table DynamoDB : <span class="font-mono text-emerald-300">ImageAnalysisResults</span>
+          </h2>
+          <p class="text-xs text-slate-400">Enregistrements persistés en base NoSQL (Partition Key: ImageName | Sort Key: ProcessedAt)</p>
+        </div>
+        <button onclick="fetchHistory()" class="px-3 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Rafraîchir</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-800">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-4">Image</th>
+              <th class="py-3 px-4">Horodatage (UTC)</th>
+              <th class="py-3 px-4">Taille</th>
+              <th class="py-3 px-4">Étiquettes Détectées</th>
+              <th class="py-3 px-4">Statut Modération</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTableBody" class="divide-y divide-slate-800 font-mono">
+            <tr>
+              <td colspan="5" class="py-6 text-center text-slate-500">Chargement de l'historique...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+    AWS Certified Cloud Practitioner Portfolio Project • S3, Lambda, Rekognition, DynamoDB, SNS & Terraform
+  </footer>
+
+  <script>
+    let selectedFile = null;
+    let selectedBase64 = null;
+
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const dropEmptyState = document.getElementById("dropEmptyState");
+    const dropPreviewState = document.getElementById("dropPreviewState");
+    const imagePreview = document.getElementById("imagePreview");
+    const fileNameDisplay = document.getElementById("fileNameDisplay");
+    const fileSizeDisplay = document.getElementById("fileSizeDisplay");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+
+    // Click to choose file
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    // Drag and Drop events
+    ["dragenter", "dragover"].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropZone.classList.add("border-amber-500", "bg-slate-900/90");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("border-amber-500", "bg-slate-900/90");
+      });
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFile(files[0]);
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+      if (!file.type.startsWith("image/")) {
+        alert("Veuillez sélectionner un fichier image valide (JPG, PNG, etc.)");
+        return;
+      }
+      selectedFile = file;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        selectedBase64 = e.target.result;
+        imagePreview.src = selectedBase64;
+        fileNameDisplay.textContent = file.name;
+        fileSizeDisplay.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+
+        dropEmptyState.classList.add("hidden");
+        dropPreviewState.classList.remove("hidden");
+
+        analyzeBtn.disabled = false;
+        analyzeBtn.className = "w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white cursor-pointer transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 active:scale-98";
+        analyzeBtn.innerHTML = `<i class="fa-solid fa-play"></i><span>Analyser l'Image (Lancer le Pipeline)</span>`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    analyzeBtn.addEventListener("click", async () => {
+      if (!selectedFile || !selectedBase64) return;
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.classList.add("opacity-50");
+      analyzeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Traitement en cours...</span>`;
+      resetStepStates();
+
+      // Step 1: S3 Ingestion
+      setStep("S3", "step-active", "blue", "Upload...", "Transfert vers S3");
+      await new Promise(r => setTimeout(r, 600));
+
+      try {
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: selectedFile.name,
+            file_base64: selectedBase64
+          })
+        });
+
+        const data = await response.json();
+        if (data.status !== "SUCCESS") throw new Error(data.message || "Erreur de traitement");
+
+        setStep("S3", "step-success", "emerald", "Reçu", `${data.s3.size}`);
+
+        // Step 2: Lambda
+        setStep("Lambda", "step-active", "blue", "Exécution", "Trigger s3:Put");
+        await new Promise(r => setTimeout(r, 500));
+        setStep("Lambda", "step-success", "emerald", `${data.lambda.latency_ms}ms`, "Succès (Code 200)");
+
+        // Step 3: Rekognition
+        setStep("Rekognition", "step-active", "purple", "Computer Vision", "detect_labels()");
+        await new Promise(r => setTimeout(r, 700));
+        setStep("Rekognition", "step-success", "emerald", "Analysé", `${data.rekognition.labels.length} labels`);
+
+        // Render Labels
+        renderLabels(data.rekognition.labels);
+
+        // Step 4: DynamoDB
+        setStep("DynamoDB", "step-active", "blue", "PutItem", "Écriture NoSQL");
+        await new Promise(r => setTimeout(r, 400));
+        setStep("DynamoDB", "step-success", "emerald", "Enregistré", "Item inséré");
+
+        // Step 5: SNS
+        if (data.dynamodb.IsFlagged) {
+          setStep("SNS", "step-flagged", "red", "Alerte !", "Email envoyé");
+          document.getElementById("alertBanner").classList.remove("hidden");
+          document.getElementById("alertMessageText").textContent = `Attention : "${selectedFile.name}" a déclenché une alerte de modération (${data.rekognition.moderation.map(m=>m.Name).join(', ')}).`;
+        } else {
+          setStep("SNS", "step-success", "emerald", "OK", "0 alerte requise");
+          document.getElementById("alertBanner").classList.add("hidden");
+        }
+
+        document.getElementById("overallStatusBadge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400";
+        document.getElementById("overallStatusBadge").textContent = "Exécution terminée avec succès";
+
+        fetchHistory();
+
+      } catch (err) {
+        alert("Erreur lors de l'analyse : " + err.message);
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.remove("opacity-50");
+        analyzeBtn.innerHTML = `<i class="fa-solid fa-play"></i><span>Analyser à nouveau</span>`;
+      }
+    });
+
+    function setStep(id, styleClass, color, badgeText, descText) {
+      const step = document.getElementById("step" + id);
+      const badge = document.getElementById("badge" + id);
+      const desc = document.getElementById("desc" + id);
+      step.className = `border rounded-xl p-3 flex flex-col justify-between transition-all ${styleClass}`;
+      badge.className = `text-[10px] px-1 py-0.5 rounded bg-${color}-500/20 text-${color}-400 font-semibold border border-${color}-500/30`;
+      badge.textContent = badgeText;
+      if (descText) desc.textContent = descText;
+    }
+
+    function resetStepStates() {
+      ["S3", "Lambda", "Rekognition", "DynamoDB", "SNS"].forEach(id => {
+        document.getElementById("step" + id).className = "bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between transition-all";
+        const badge = document.getElementById("badge" + id);
+        badge.className = "text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-400";
+        badge.textContent = "Standby";
+      });
+      document.getElementById("alertBanner").classList.add("hidden");
+    }
+
+    function renderLabels(labels) {
+      const container = document.getElementById("labelsContainer");
+      document.getElementById("labelsCount").textContent = `${labels.length} labels`;
+      
+      let html = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">`;
+      labels.forEach(l => {
+        html += `
+          <div class="bg-slate-900/90 border border-slate-800/80 rounded-lg p-2 flex flex-col justify-between">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-medium text-slate-200">${l.Name}</span>
+              <span class="text-amber-400 font-bold">${l.Confidence}%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-1.5 rounded-full" style="width: ${l.Confidence}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    async function fetchHistory() {
+      try {
+        const res = await fetch("/api/records");
+        const records = await res.json();
+        const tbody = document.getElementById("recordsTableBody");
+
+        if (!records || records.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">Aucun enregistrement dans DynamoDB pour l'instant.</td></tr>`;
+          return;
+        }
+
+        let rows = "";
+        records.forEach(r => {
+          const isFlagged = r.IsFlagged;
+          const statusBadge = isFlagged 
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-400 border border-red-500/30"><i class="fa-solid fa-triangle-exclamation"></i> Sensible</span>`
+            : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"><i class="fa-solid fa-check"></i> Conforme</span>`;
+
+          const labelsBadge = (r.Labels || []).slice(0, 3).map(l => 
+            `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 mr-1 mb-1">${l.Name}</span>`
+          ).join("");
+
+          rows += `
+            <tr class="hover:bg-slate-900/50 transition">
+              <td class="py-3 px-4 font-semibold text-slate-200 flex items-center gap-2">
+                <i class="fa-regular fa-image text-slate-500"></i>
+                <span class="truncate max-w-[150px]">${r.ImageName}</span>
+              </td>
+              <td class="py-3 px-4 text-slate-400 text-[11px]">${r.ProcessedAt.replace("T", " ").substring(0, 19)}</td>
+              <td class="py-3 px-4 text-slate-400">${r.FileSize || "-"}</td>
+              <td class="py-3 px-4">${labelsBadge}</td>
+              <td class="py-3 px-4">${statusBadge}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = rows;
+      } catch (e) {
+        console.error("Erreur lors de la récupération de l'historique :", e);
+      }
+    }
+
+    // Load history on start
+    fetchHistory();
+  </script>
+</body>
+</html>

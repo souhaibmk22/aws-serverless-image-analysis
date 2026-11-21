@@ -14,27 +14,18 @@ The system combines managed cloud computer vision (**Amazon Rekognition**) with 
 
 ## 🏛️ Architecture Overview
 
-<div align="center">
-  <img src="architecture/diagram.svg" alt="Architecture AWS & Machine Learning Non-Supervisé" width="100%">
-</div>
-
-<details>
-<summary>🔍 Afficher le flux d'architecture détaillé (Mermaid)</summary>
+![Architecture Diagram](./architecture/diagram.svg)
 
 ```mermaid
 flowchart LR
-    Client["👤 Client / Web UI"] -->|"Upload Image"| S3["🪣 Amazon S3\n(Bucket Ingestion)"]
-    S3 -->|"s3:ObjectCreated"| Lambda["⚡ AWS Lambda\n(Python 3.12 Orchestrator)"]
+    Client["Client<br/><small>Upload image</small>"] --> S3["Amazon S3<br/><small>Storage</small>"]
+    S3 --> Lambda["AWS Lambda<br/><small>Python 3.12</small>"]
     
-    Lambda -->|"Computer Vision"| Rekog["🧠 Amazon Rekognition\n(Managed AI)"]
-    Lambda -->|"64-dim Feature Vector"| KMeans["📊 Modèle K-Means\n(Anomaly Detection)"]
-    Lambda -->|"Store Metadata"| Dynamo["🗄️ Amazon DynamoDB\n(NoSQL Table)"]
-    
-    KMeans -->|"Si Distance > Seuil Critique"| SNS["📬 Amazon SNS\n(Topic Alerting)"]
-    Rekog -->|"Si Modération Flagged"| SNS
-    SNS -->|"Instant Notification"| Admin["🚨 Admin Security Alert\n(Email / SMS)"]
+    Lambda --> KMeans["K-Means model<br/><small>Anomaly detection</small>"]
+    Lambda --> Dynamo["Amazon DynamoDB<br/><small>Stores results</small>"]
+    Lambda --> SNS["Amazon SNS<br/><small>Email alert</small>"]
+    Lambda -.-> Rekog["Amazon Rekognition<br/><small>Optional alternative</small>"]
 ```
-</details>
 
 ---
 

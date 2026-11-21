@@ -1,145 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 520" width="1020" height="520" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 410" width="880" height="410" style="background:#ffffff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <defs>
-    <linearGradient id="grad-s3" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f59e0b"/>
-      <stop offset="100%" stop-color="#d97706"/>
-    </linearGradient>
-    <linearGradient id="grad-lambda" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
-    </linearGradient>
-    <linearGradient id="grad-rekog" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#7e22ce"/>
-    </linearGradient>
-    <linearGradient id="grad-kmeans" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06b6d4"/>
-      <stop offset="100%" stop-color="#0891b2"/>
-    </linearGradient>
-    <linearGradient id="grad-dynamo" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
-    </linearGradient>
-    <linearGradient id="grad-sns" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ef4444"/>
-      <stop offset="100%" stop-color="#b91c1c"/>
-    </linearGradient>
+    <!-- Arrow marker solid -->
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M 0 0 L 6 3 L 0 6 z" fill="#71717a"/>
+    </marker>
+    <!-- Arrow marker dashed -->
+    <marker id="arrowhead-dashed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M 0 0 L 6 3 L 0 6 z" fill="#a1a1aa"/>
+    </marker>
   </defs>
 
-  <!-- Title & Header -->
-  <text x="40" y="45" font-size="22" font-weight="bold" fill="#ffffff">Architecture AWS Serverless &amp; Machine Learning Non-Supervisé</text>
-  <text x="40" y="70" font-size="13" fill="#94a3b8">Pipeline automatisé d'analyse d'images, clustering K-Means et alerting temps réel avec Terraform</text>
-
-  <!-- User / Client (Outside Cloud) -->
-  <g transform="translate(30, 210)">
-    <rect width="115" height="110" rx="12" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
-    <text x="57" y="45" font-size="24" text-anchor="middle">👤</text>
-    <text x="57" y="75" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">Client / Web UI</text>
-    <text x="57" y="95" font-size="10" fill="#94a3b8" text-anchor="middle">Upload Image</text>
+  <!-- 1. Node: Client -->
+  <g>
+    <rect x="25" y="165" width="130" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="90" y="194" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Client</text>
+    <text x="90" y="213" font-size="12" fill="#71717a" text-anchor="middle">Upload image</text>
   </g>
 
-  <!-- Arrow Client -> Cloud -->
-  <path d="M 145 265 L 185 265" stroke="#38bdf8" stroke-width="2"/>
-  <polygon points="185,261 195,265 185,269" fill="#38bdf8"/>
-  <text x="165" y="255" font-size="10" fill="#38bdf8" text-anchor="middle">PUT</text>
+  <!-- Arrow: Client -> Amazon S3 -->
+  <line x1="155" y1="197" x2="190" y2="197" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
-  <!-- Cloud Boundary Box -->
-  <rect x="195" y="95" width="790" height="390" rx="16" fill="#111827" stroke="#1f2937" stroke-width="2"/>
-  <text x="220" y="125" font-size="11" font-weight="bold" fill="#38bdf8" letter-spacing="1">AWS CLOUD (REGION EU-WEST-3)</text>
-
-  <!-- S3 Block -->
-  <g transform="translate(220, 165)">
-    <rect width="135" height="200" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
-    <rect x="15" y="15" width="40" height="40" rx="8" fill="url(#grad-s3)"/>
-    <text x="35" y="42" font-size="20" text-anchor="middle">🪣</text>
-    <text x="15" y="85" font-size="13" font-weight="bold" fill="#ffffff">Amazon S3</text>
-    <text x="15" y="105" font-size="10" fill="#94a3b8">Bucket Ingestion</text>
-    <text x="15" y="125" font-size="9" fill="#64748b">• Chiffrement AES-256</text>
-    <text x="15" y="140" font-size="9" fill="#64748b">• Block Public Access</text>
-    <text x="15" y="155" font-size="9" fill="#64748b">• Event Notification</text>
-    <text x="15" y="180" font-size="10" font-weight="bold" fill="#f59e0b">s3:ObjectCreated</text>
+  <!-- 2. Node: Amazon S3 -->
+  <g>
+    <rect x="195" y="165" width="130" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="260" y="194" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Amazon S3</text>
+    <text x="260" y="213" font-size="12" fill="#71717a" text-anchor="middle">Storage</text>
   </g>
 
-  <!-- Arrow S3 -> Lambda -->
-  <path d="M 355 265 L 400 265" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4"/>
-  <polygon points="400,261 410,265 400,269" fill="#f59e0b"/>
+  <!-- Arrow: Amazon S3 -> AWS Lambda -->
+  <line x1="325" y1="197" x2="360" y2="197" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
-  <!-- Lambda Block -->
-  <g transform="translate(410, 165)">
-    <rect width="145" height="200" rx="12" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
-    <rect x="15" y="15" width="40" height="40" rx="8" fill="url(#grad-lambda)"/>
-    <text x="35" y="42" font-size="20" text-anchor="middle">⚡</text>
-    <text x="15" y="85" font-size="13" font-weight="bold" fill="#ffffff">AWS Lambda</text>
-    <text x="15" y="105" font-size="10" fill="#94a3b8">Runtime Python 3.12</text>
-    <text x="15" y="125" font-size="9" fill="#64748b">• Orchestrateur Event</text>
-    <text x="15" y="140" font-size="9" fill="#64748b">• Rôle IAM Least-Priv</text>
-    <text x="15" y="155" font-size="9" fill="#64748b">• Feature Extraction</text>
-    <text x="15" y="180" font-size="10" font-weight="bold" fill="#fbbf24">Inférence Serverless</text>
+  <!-- 3. Node: AWS Lambda -->
+  <g>
+    <rect x="365" y="165" width="140" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="435" y="194" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">AWS Lambda</text>
+    <text x="435" y="213" font-size="12" fill="#71717a" text-anchor="middle">Python 3.12</text>
   </g>
 
-  <!-- Branching Arrows from Lambda -->
-  <!-- To Rekognition -->
-  <path d="M 555 200 L 620 165" stroke="#a855f7" stroke-width="2"/>
-  <polygon points="617,160 628,162 621,170" fill="#a855f7"/>
-
-  <!-- To Unsupervised K-Means -->
-  <path d="M 555 265 L 620 265" stroke="#06b6d4" stroke-width="2"/>
-  <polygon points="620,261 630,265 620,269" fill="#06b6d4"/>
-
-  <!-- To DynamoDB -->
-  <path d="M 555 330 L 620 365" stroke="#3b82f6" stroke-width="2"/>
-  <polygon points="621,360 628,368 617,370" fill="#3b82f6"/>
-
-  <!-- Rekognition Block -->
-  <g transform="translate(630, 130)">
-    <rect width="200" height="68" rx="10" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
-    <rect x="12" y="12" width="30" height="30" rx="6" fill="url(#grad-rekog)"/>
-    <text x="27" y="33" font-size="16" text-anchor="middle">🧠</text>
-    <text x="50" y="30" font-size="12" font-weight="bold" fill="#ffffff">Amazon Rekognition</text>
-    <text x="50" y="46" font-size="10" fill="#a855f7">detect_labels() &amp; modération</text>
-    <text x="50" y="59" font-size="9" fill="#94a3b8">Computer Vision Managée</text>
+  <!-- 4. Branch 1: K-Means model (Anomaly detection) -->
+  <g>
+    <rect x="585" y="30" width="245" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="707" y="59" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">K-Means model</text>
+    <text x="707" y="78" font-size="12" fill="#71717a" text-anchor="middle">Anomaly detection</text>
   </g>
+  <!-- Arrow: Lambda -> K-Means model -->
+  <line x1="505" y1="185" x2="580" y2="70" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
-  <!-- Unsupervised K-Means Model Block -->
-  <g transform="translate(630, 220)">
-    <rect width="200" height="85" rx="10" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
-    <rect x="12" y="12" width="30" height="30" rx="6" fill="url(#grad-kmeans)"/>
-    <text x="27" y="33" font-size="16" text-anchor="middle">📊</text>
-    <text x="50" y="28" font-size="12" font-weight="bold" fill="#ffffff">K-Means Non-Supervisé</text>
-    <text x="50" y="44" font-size="10" fill="#06b6d4">Clustering K=3 &amp; Centroïdes</text>
-    <text x="12" y="62" font-size="9" fill="#94a3b8">• Vecteur 64 caractéristiques</text>
-    <text x="12" y="75" font-size="9" fill="#94a3b8">• Détection d'anomalies (Outliers)</text>
+  <!-- 5. Branch 2: Amazon DynamoDB (Stores results) -->
+  <g>
+    <rect x="585" y="125" width="245" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="707" y="154" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Amazon DynamoDB</text>
+    <text x="707" y="173" font-size="12" fill="#71717a" text-anchor="middle">Stores results</text>
   </g>
+  <!-- Arrow: Lambda -> DynamoDB -->
+  <line x1="505" y1="193" x2="580" y2="160" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
-  <!-- DynamoDB Block -->
-  <g transform="translate(630, 325)">
-    <rect width="200" height="70" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
-    <rect x="12" y="12" width="30" height="30" rx="6" fill="url(#grad-dynamo)"/>
-    <text x="27" y="33" font-size="16" text-anchor="middle">🗄️</text>
-    <text x="50" y="30" font-size="12" font-weight="bold" fill="#ffffff">Amazon DynamoDB</text>
-    <text x="50" y="46" font-size="10" fill="#38bdf8">Mode On-Demand (0€ fixe)</text>
-    <text x="50" y="59" font-size="9" fill="#94a3b8">Persistance NoSQL des métadonnées</text>
+  <!-- 6. Branch 3: Amazon SNS (Email alert) -->
+  <g>
+    <rect x="585" y="220" width="245" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
+    <text x="707" y="249" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Amazon SNS</text>
+    <text x="707" y="268" font-size="12" fill="#71717a" text-anchor="middle">Email alert</text>
   </g>
+  <!-- Arrow: Lambda -> Amazon SNS -->
+  <line x1="505" y1="202" x2="580" y2="245" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
-  <!-- Arrow K-Means / Rekognition to SNS -->
-  <path d="M 830 265 L 865 265" stroke="#ef4444" stroke-width="2"/>
-  <polygon points="865,261 875,265 865,269" fill="#ef4444"/>
-
-  <!-- SNS Alert Block -->
-  <g transform="translate(875, 215)">
-    <rect width="95" height="100" rx="10" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
-    <rect x="27" y="10" width="38" height="38" rx="8" fill="url(#grad-sns)"/>
-    <text x="46" y="35" font-size="18" text-anchor="middle">📬</text>
-    <text x="47" y="65" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">Amazon SNS</text>
-    <text x="47" y="80" font-size="9" fill="#f87171" text-anchor="middle">Alerte Menace</text>
-    <text x="47" y="93" font-size="8" fill="#94a3b8" text-anchor="middle">Email / SMS</text>
+  <!-- 7. Branch 4: Amazon Rekognition (Optional alternative - dashed) -->
+  <g>
+    <rect x="585" y="315" width="245" height="64" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <text x="707" y="344" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Amazon Rekognition</text>
+    <text x="707" y="363" font-size="12" fill="#71717a" text-anchor="middle">Optional alternative</text>
   </g>
-
-  <!-- Bottom Terraform Badge -->
-  <g transform="translate(220, 395)">
-    <rect width="750" height="45" rx="8" fill="#0f172a" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="3,3"/>
-    <text x="595" y="423" font-size="12" font-weight="bold" fill="#818cf8" text-anchor="middle">
-      🏗️ Infrastructure as Code (Terraform) : S3, IAM, Lambda, DynamoDB &amp; SNS 100% automatisés et reproductibles
-    </text>
-  </g>
+  <!-- Dashed Arrow: Lambda -> Rekognition -->
+  <line x1="505" y1="215" x2="580" y2="335" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-dashed)"/>
 </svg>

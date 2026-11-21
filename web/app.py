@@ -139,18 +139,8 @@ def generate_smart_labels(filename: str, file_bytes: bytes, hint: str = "", clie
                 is_flagged = True
                 moderation_labels.append({"Name": "Weapons & Violence", "Confidence": 94.8})
 
-    # Default labels if nothing found
-    if not detected:
-        detected = [
-            ("Digital Image", 99.0),
-            ("Photograph", 98.2),
-            ("Visual Artwork", 93.5),
-            ("Media Asset", 89.0),
-        ]
-        if words and words[0] not in ["screenshot"]:
-            detected.insert(0, (words[0].capitalize(), 91.5))
-
-    # Remove duplicates preserving order
+    # If no specific semantic labels, do NOT inject fake/generic artwork labels
+    # Return empty list so the UI displays pure Machine Learning metrics
     seen = set()
     unique_labels = []
     for name, conf in detected:
@@ -295,6 +285,7 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
                 response_payload = {
                     "status": "SUCCESS",
                     "engine": backend_source,
+                    "ml_metrics": unsupervised_metrics,
                     "s3": {
                         "bucket": "image-analysis-pipeline-uploads-dev",
                         "key": s3_key,

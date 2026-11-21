@@ -384,8 +384,8 @@
         await new Promise(r => setTimeout(r, 700));
         setStep("Rekognition", "step-success", "emerald", "Analysé", `${data.rekognition.labels.length} labels`);
 
-        // Render Labels
-        renderLabels(data.rekognition.labels);
+        // Render ML Anomaly Metrics and Labels
+        renderAnalysis(data.rekognition.labels, data.ml_metrics);
 
         // Step 4: DynamoDB
         setStep("DynamoDB", "step-active", "blue", "PutItem", "Écriture NoSQL");
@@ -436,24 +436,83 @@
       document.getElementById("alertBanner").classList.add("hidden");
     }
 
-    function renderLabels(labels) {
+    function renderAnalysis(labels, mlMetrics) {
       const container = document.getElementById("labelsContainer");
-      document.getElementById("labelsCount").textContent = `${labels.length} labels`;
-      
-      let html = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">`;
-      labels.forEach(l => {
+      const titleSpan = document.getElementById("labelsCount");
+
+      let html = `<div class="space-y-3 w-full">`;
+
+      // 1. Unsupervised Machine Learning Metrics Card
+      if (mlMetrics) {
+        const isAnomaly = mlMetrics.is_anomaly;
+        const scorePct = Math.round(mlMetrics.anomaly_score * 100);
+        const barColor = isAnomaly ? "from-red-500 to-rose-600" : "from-emerald-500 to-teal-500";
+        const statusText = isAnomaly ? "🚨 ANOMALIE STATISTIQUE (OUTLIER)" : "✅ CONFORME AUX CLUSTERS";
+        const statusBadge = isAnomaly ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+
         html += `
-          <div class="bg-slate-900/90 border border-slate-800/80 rounded-lg p-2 flex flex-col justify-between">
-            <div class="flex items-center justify-between text-xs mb-1">
-              <span class="font-medium text-slate-200">${l.Name}</span>
-              <span class="text-amber-400 font-bold">${l.Confidence}%</span>
+          <div class="bg-slate-900/95 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-brain text-purple-400"></i> Modèle K-Means Non-Supervisé
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold border ${statusBadge}">
+                ${statusText}
+              </span>
             </div>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-1.5 rounded-full" style="width: ${l.Confidence}%"></div>
+
+            <!-- Anomaly Score Progress Bar -->
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-400">Score d'anomalie :</span>
+                <span class="font-bold font-mono ${isAnomaly ? 'text-red-400' : 'text-emerald-400'}">${scorePct}%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div class="bg-gradient-to-r ${barColor} h-2 rounded-full transition-all duration-500" style="width: ${scorePct}%"></div>
+              </div>
+            </div>
+
+            <!-- Mathematical Metrics Grid -->
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-[11px] font-mono">
+              <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                <span class="text-slate-500 block text-[9px] uppercase">Distance Euclidienne</span>
+                <span class="font-bold text-slate-200">${mlMetrics.min_distance_to_centroid}</span>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                <span class="text-slate-500 block text-[9px] uppercase">Seuil Critique</span>
+                <span class="font-bold text-slate-400">${mlMetrics.threshold}</span>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                <span class="text-slate-500 block text-[9px] uppercase">Cluster</span>
+                <span class="font-bold text-blue-400">#${mlMetrics.assigned_cluster}</span>
+              </div>
             </div>
           </div>
         `;
-      });
+      }
+
+      // 2. Specific Semantic Labels (Only if genuine labels exist)
+      if (labels && labels.length > 0) {
+        titleSpan.textContent = `${labels.length} label(s)`;
+        html += `<div class="grid grid-cols-2 gap-2 w-full pt-1">`;
+        labels.forEach(l => {
+          html += `
+            <div class="bg-slate-900/80 border border-slate-800/80 rounded-lg p-2 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-medium text-slate-200">${l.Name}</span>
+                <span class="text-amber-400 font-bold">${l.Confidence}%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-1.5 rounded-full" style="width: ${l.Confidence}%"></div>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      } else {
+        titleSpan.textContent = `Analyse Mathématique`;
+      }
+
       html += `</div>`;
       container.innerHTML = html;
     }

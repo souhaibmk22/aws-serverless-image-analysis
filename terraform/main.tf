@@ -52,6 +52,30 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "image_bucket_cryp
   }
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "review_lifecycle" {
+  bucket = aws_s3_bucket.image_bucket.id
+
+  rule {
+    id     = "archive-pending-review"
+    status = "Enabled"
+
+    filter {
+      prefix = "pending_review/"
+    }
+
+    # Transition to Glacier after 30 days to save costs
+    transition {
+      days          = 30
+      storage_class = "GLACIER"
+    }
+
+    # Expire after 90 days if unreviewed
+    expiration {
+      days = 90
+    }
+  }
+}
+
 # ------------------------------------------------------------------------------
 # 2. Amazon DynamoDB Table (Storage for Metadata and Analysis Results)
 # ------------------------------------------------------------------------------
@@ -187,6 +211,7 @@ resource "aws_lambda_function" "image_processor" {
       DYNAMODB_TABLE       = aws_dynamodb_table.analysis_results.name
       SNS_TOPIC_ARN        = aws_sns_topic.alerts.arn
       CONFIDENCE_THRESHOLD = tostring(var.confidence_threshold)
+      ENGINE               = var.engine
     }
   }
 }

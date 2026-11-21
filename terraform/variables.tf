@@ -27,3 +27,9 @@ variable "confidence_threshold" {
   type        = number
   default     = 75.0
 }
+
+variable "engine" {
+  description = "Safety detection engine (CLIP_SUPERVISED, REKOGNITION, UNSUPERVISED_KMEANS)"
+  type        = string
+  default     = "CLIP_SUPERVISED"
+}

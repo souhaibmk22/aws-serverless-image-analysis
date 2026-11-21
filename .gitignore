@@ -8,6 +8,21 @@ env/
 venv/
 .venv/
 
+# Large Datasets & Binary Weights (STRICTLY EXCLUDED FROM GIT)
+data/*
+!data/SOURCES.md
+!data/splits.json
+!data/.gitkeep
+*.npy
+*.npz
+*.onnx
+*.onnx_data
+*.pth
+*.pt
+*.bin
+*.tar.gz
+*.zip
+
 # Terraform
 **/.terraform/*
 *.tfstate
@@ -22,10 +37,10 @@ override.tf.json
 *_override.tf.json
 lambda_payload.zip
 
+# Storage & Uploads
+storage/s3_bucket/*
+!storage/s3_bucket/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db
-
-# Local uploads
-storage/s3_bucket/*
-!storage/s3_bucket/.gitkeep

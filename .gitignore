@@ -25,3 +25,7 @@ lambda_payload.zip
 # OS
 .DS_Store
 Thumbs.db
+
+# Local uploads
+storage/s3_bucket/*
+!storage/s3_bucket/.gitkeep

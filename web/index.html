@@ -6,6 +6,9 @@
   <title>AWS Serverless Image Analysis - Live Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Real Computer Vision AI Models (Object Detection) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
   <style>
     @keyframes pulse-subtle {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -31,6 +34,10 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <span id="aiEngineBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+          Chargement IA Vision...
+        </span>
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           Pipeline Actif
@@ -247,6 +254,20 @@
   <script>
     let selectedFile = null;
     let selectedBase64 = null;
+    let visionModel = null;
+
+    // Load in-browser AI vision model (COCO-SSD / MobileNet)
+    if (typeof cocoSsd !== 'undefined') {
+      cocoSsd.load().then(model => {
+        visionModel = model;
+        console.log("Vision AI Model active and ready to detect objects!");
+        const badge = document.getElementById("aiEngineBadge");
+        if (badge) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span> IA Vision Active (Pixels)`;
+          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20";
+        }
+      }).catch(e => console.log("AI local fallback:", e));
+    }
 
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileInput");
@@ -321,6 +342,21 @@
       await new Promise(r => setTimeout(r, 600));
 
       try {
+        // Real-time Computer Vision on actual image pixels
+        let detectedClientLabels = [];
+        if (visionModel && imagePreview) {
+          try {
+            const preds = await visionModel.detect(imagePreview);
+            detectedClientLabels = preds.map(p => ({
+              name: p.class,
+              confidence: Math.round(p.score * 1000) / 10
+            }));
+            console.log("In-browser AI detected:", detectedClientLabels);
+          } catch(e) {
+            console.warn("Client AI error", e);
+          }
+        }
+
         const hintVal = document.getElementById("hintInput") ? document.getElementById("hintInput").value.trim() : "";
         const response = await fetch("/api/upload", {
           method: "POST",
@@ -328,6 +364,7 @@
           body: JSON.stringify({
             filename: selectedFile.name,
             hint: hintVal,
+            client_labels: detectedClientLabels,
             file_base64: selectedBase64
           })
         });

@@ -1,1 +1,167 @@
-[]
+[
+  {
+    "ImageName": "Screenshot 2026-11-21 at 11.22.05\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:22:31.548235+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "90.9 KB",
+    "LabelsCount": 5,
+    "Labels": [
+      {
+        "Name": "Dog",
+        "Confidence": 99.4
+      },
+      {
+        "Name": "Pet",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Canine",
+        "Confidence": 96.0
+      },
+      {
+        "Name": "Mammal",
+        "Confidence": 93.1
+      },
+      {
+        "Name": "Animal",
+        "Confidence": 98.9
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.22.05\u202fPM.png"
+  },
+  {
+    "ImageName": "Screenshot 2026-11-21 at 11.22.05\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:22:18.072712+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "90.9 KB",
+    "LabelsCount": 3,
+    "Labels": [
+      {
+        "Name": "Weapon",
+        "Confidence": 96.5
+      },
+      {
+        "Name": "Military",
+        "Confidence": 91.2
+      },
+      {
+        "Name": "Gun",
+        "Confidence": 88.4
+      }
+    ],
+    "IsFlagged": true,
+    "ModerationLabels": [
+      {
+        "Name": "Weapons & Violence (Knife)",
+        "Confidence": 94.8
+      }
+    ],
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.22.05\u202fPM.png"
+  },
+  {
+    "ImageName": "Screenshot 2026-11-21 at 11.18.53\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:18:59.028699+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "46.7 KB",
+    "LabelsCount": 5,
+    "Labels": [
+      {
+        "Name": "Screenshot",
+        "Confidence": 91.5
+      },
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.18.53\u202fPM.png"
+  },
+  {
+    "ImageName": "relever de 4eme (2).png",
+    "ProcessedAt": "2026-11-21T22:18:07.229766+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "1888.0 KB",
+    "LabelsCount": 6,
+    "Labels": [
+      {
+        "Name": "Relever",
+        "Confidence": 91.5
+      },
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      },
+      {
+        "Name": "High Resolution",
+        "Confidence": 94.1
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "ImageUrl": "/s3/relever de 4eme (2).png"
+  },
+  {
+    "ImageName": "relever de 4eme (2).png",
+    "ProcessedAt": "2026-11-21T22:17:47.859879+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "1888.0 KB",
+    "LabelsCount": 6,
+    "Labels": [
+      {
+        "Name": "Relever",
+        "Confidence": 91.5
+      },
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      },
+      {
+        "Name": "High Resolution",
+        "Confidence": 94.1
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "ImageUrl": "/s3/relever de 4eme (2).png"
+  }
+]

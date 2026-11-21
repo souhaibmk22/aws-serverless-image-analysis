@@ -48,30 +48,35 @@ def collect_images_with_labels(data_root="data/raw"):
     """
     records = []
     
-    # 1. Safe directories
+    # 1. Safe directories (supports both data/raw/... and data/... paths)
     safe_roots = [
         ("data/raw/safe", "safe_standard"),
         ("data/raw/safe/coco", "coco_val2017"),
+        ("data/coco", "coco_val2017"),
         ("data/raw/safe/hard_negatives", "hard_negatives"),
-        ("data/raw/safe/documents_screenshots", "documents_screenshots")
+        ("data/raw/safe/documents_screenshots", "documents_screenshots"),
+        ("data/extra_normal", "extra_normal")
     ]
     for path, source_name in safe_roots:
         if os.path.exists(path):
-            for f in os.listdir(path):
-                fpath = os.path.join(path, f)
-                if os.path.isfile(fpath) and os.path.splitext(f.lower())[1] in VALID_EXTENSIONS:
-                    records.append({
-                        "path": fpath,
-                        "label": 0,
-                        "class_name": "safe",
-                        "source": source_name,
-                        "is_ood": False
-                    })
+            for root, _, files in os.walk(path):
+                for f in files:
+                    fpath = os.path.join(root, f)
+                    if os.path.splitext(f.lower())[1] in VALID_EXTENSIONS:
+                        records.append({
+                            "path": fpath,
+                            "label": 0,
+                            "class_name": "safe",
+                            "source": source_name,
+                            "is_ood": False
+                        })
 
-    # 2. Dangerous directories
+    # 2. Dangerous directories (supports both data/raw/... and data/... paths)
     dangerous_roots = [
         ("data/raw/dangerous", "open_images_weapons"),
-        ("data/raw/dangerous_manual", "manual_weapons")
+        ("data/raw/dangerous_manual", "manual_weapons"),
+        ("data/dangerous", "manual_weapons"),
+        ("data/test_dangerous", "test_dangerous")
     ]
     for path, source_name in dangerous_roots:
         if os.path.exists(path):

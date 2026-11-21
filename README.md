@@ -77,7 +77,18 @@ The trained model (`kmeans_model.json`) is loaded outside the Lambda handler (wa
 ├── .github/workflows/
 │   └── ci.yml                     # Automated GitHub Actions test workflow
 ├── architecture/
-│   └── diagram.svg                # Vector architecture diagram
+│   └── diagram.svg                # Clean vector architecture diagram
+├── data/
+│   └── SOURCES.md                 # Public data sources, licenses & attribution registry
+├── ml_supervised/
+│   ├── data_loader.py             # Stratified group split (70/15/15) & pHash deduplication
+│   ├── download_datasets.py       # Automated COCO val2017 & Open Images downloader
+│   ├── feature_extractor.py       # CLIP ViT-B/32 pure PIL & PyTorch feature extractor
+│   ├── inspect_grid.py            # Visual contact sheet generator (50 samples/class)
+│   ├── train_source_classifier.py # Domain shortcut & style artifact detector
+│   ├── train_mvp.py               # 5-fold CV, sigmoid calibration & double thresholding
+│   ├── evaluate.py                # Single test evaluation (prevalences 50%, 1%, 0.1%)
+│   └── lambda_supervised.py       # Production serverless handler with pending_review routing
 ├── ml_unsupervised/
 │   ├── feature_extractor.py       # 64-dim image feature extractor
 │   ├── kmeans_engine.py           # K-Means clustering & Euclidean outlier engine
@@ -89,18 +100,59 @@ The trained model (`kmeans_model.json`) is loaded outside the Lambda handler (wa
 │   └── lambda_function.py         # Rekognition & S3 event handler
 ├── tests/
 │   ├── mock_event.json            # S3 test payload
-│   └── test_lambda.py             # Automated unit tests
+│   ├── test_classifier.py         # CLIP preprocessing & inference parity tests
+│   └── test_lambda.py             # Automated AWS Lambda handler tests
 ├── web/
 │   ├── app.py                     # Local web server & AWS API bridge
 │   └── index.html                 # Interactive drag-and-drop dashboard
 ├── terraform/
-│   ├── main.tf                    # Complete infrastructure definition
-│   ├── variables.tf               # Configurable parameters
+│   ├── main.tf                    # Complete infrastructure definition (with S3 lifecycle)
+│   ├── variables.tf               # Configurable parameters (engine selector)
 │   ├── outputs.tf                 # Resource ARNs and outputs
 │   └── terraform.tfvars.example
+├── requirements.txt               # Pinned dependencies (Torch, Transformers, Sklearn)
 ├── .gitignore
 └── README.md
 ```
+
+---
+
+## 📦 Dataset
+
+This repository does not include any dataset. To reproduce the results, download public datasets yourself and respect their licenses.
+
+- **Safe images:** [COCO val2017](http://images.cocodataset.org/zips/val2017.zip) (5,000 images, ~780 MB, varied Flickr CC licenses), [Open Images V7](https://storage.googleapis.com/openimages/web/index.html), [Places365](http://places2.csail.mit.edu/)
+- **Hard negatives (kitchen knives, toys, tools):** Open Images V7 (`Kitchen knife`, `Scissors`, `Axe`, `Toy`), COCO cutlery and sporting goods
+- **Weapon images:** Public weapon-detection datasets on [Roboflow Universe Weapon Detection](https://universe.roboflow.com/subhransu-sekhar/weapon-detection-o8uoi) or [Kaggle Weapon Detection Dataset (Guns & Knives)](https://www.kaggle.com/datasets/itsahmad/weapon-detection-dataset) and [Kaggle Tactical Knife Dataset](https://www.kaggle.com/datasets/vencerlanz09/knife-dataset) (check the license of each one before downloading)
+
+Place them under `data/raw/` as described in [`data/SOURCES.md`](./data/SOURCES.md):
+
+```
+data/raw/
+├── safe/
+│   ├── coco/                      # Extracted COCO val2017 photos
+│   └── hard_negatives/            # Domestic knives, tools, scissors, toys
+└── dangerous_manual/              # Guns, rifles, combat knives (min 100 images)
+```
+
+Then run:
+
+```bash
+# 1. Automated download of safe baseline (COCO val2017)
+python3 ml_supervised/download_datasets.py
+
+# 2. Extract CLIP embeddings, tune Logistic Regression via 5-fold CV & calibrate thresholds
+python3 ml_supervised/train_mvp.py
+
+# 3. Evaluate final test metrics (AUC-ROC, PR curve, worst FPs/FNs)
+python3 ml_supervised/evaluate.py
+```
+
+---
+
+## ⚠️ Limitations
+
+This is a learning project. The classifier is trained on public datasets and may fail on small, hidden or unusual weapons. It is not a replacement for a managed moderation service such as Amazon Rekognition.
 
 ---
 

@@ -14,31 +14,27 @@ The system combines managed cloud computer vision (**Amazon Rekognition**) with 
 
 ## 🏛️ Architecture Overview
 
+<div align="center">
+  <img src="architecture/diagram.svg" alt="Architecture AWS & Machine Learning Non-Supervisé" width="100%">
+</div>
+
+<details>
+<summary>🔍 Afficher le flux d'architecture détaillé (Mermaid)</summary>
+
+```mermaid
+flowchart LR
+    Client["👤 Client / Web UI"] -->|"Upload Image"| S3["🪣 Amazon S3\n(Bucket Ingestion)"]
+    S3 -->|"s3:ObjectCreated"| Lambda["⚡ AWS Lambda\n(Python 3.12 Orchestrator)"]
+    
+    Lambda -->|"Computer Vision"| Rekog["🧠 Amazon Rekognition\n(Managed AI)"]
+    Lambda -->|"64-dim Feature Vector"| KMeans["📊 Modèle K-Means\n(Anomaly Detection)"]
+    Lambda -->|"Store Metadata"| Dynamo["🗄️ Amazon DynamoDB\n(NoSQL Table)"]
+    
+    KMeans -->|"Si Distance > Seuil Critique"| SNS["📬 Amazon SNS\n(Topic Alerting)"]
+    Rekog -->|"Si Modération Flagged"| SNS
+    SNS -->|"Instant Notification"| Admin["🚨 Admin Security Alert\n(Email / SMS)"]
 ```
-                      ┌─────────────────────────────────────────┐
-                      │              AWS CLOUD                  │
-                      │                                         │
-┌──────────────┐      │   ┌──────────────┐     ┌────────────┐   │
-│ User / Client├─────►│──►│  Amazon S3   ├────►│ AWS Lambda │   │
-└──────────────┘Upload│   │ (Uploads)    │Event│  (Python)  │   │
-                      │   └──────────────┘     └──────┬─────┘   │
-                      │                               │         │
-                      │           ┌───────────────────┼─────────┴─────────────┐
-                      │           │                   │                       │
-                      │           ▼                   ▼                       ▼
-                      │   ┌──────────────┐    ┌──────────────┐       ┌─────────────────┐
-                      │   │Amazon        │    │Unsupervised  │       │Amazon DynamoDB  │
-                      │   │Rekognition   │    │K-Means Model │       │(NoSQL Results)  │
-                      │   │(Vision AI)   │    │(Outlier Det.)│       └────────┬────────┘
-                      │   └──────────────┘    └───────┬──────┘                │
-                      │                               │                       │
-                      │                               ▼                       ▼
-                      │                       ┌──────────────┐        ┌──────────────┐
-                      │                       │Amazon SNS    │───────►│ Admin Alert  │
-                      │                       │(Security)    │        │ (Email/SMS)  │
-                      │                       └──────────────┘        └──────────────┘
-                      └───────────────────────────────────────────────────────┘
-```
+</details>
 
 ---
 

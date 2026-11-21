@@ -29,10 +29,21 @@ AWS_REGION = os.environ.get("AWS_REGION", "eu-west-3")
 os.makedirs(S3_DIR, exist_ok=True)
 os.makedirs(WEB_DIR, exist_ok=True)
 
-# Initialize local DB files if not present
-if not os.path.exists(DYNAMODB_FILE):
-    with open(DYNAMODB_FILE, "w") as f:
-        json.dump([], f)
+# Unsupervised Machine Learning Model
+ML_DIR = os.path.join(BASE_DIR, "ml_unsupervised")
+if ML_DIR not in sys.path:
+    sys.path.insert(0, ML_DIR)
+
+kmeans_model = None
+try:
+    from feature_extractor import extract_image_features
+    from kmeans_engine import KMeansAnomalyDetector
+    model_json = os.path.join(ML_DIR, "kmeans_model.json")
+    if os.path.exists(model_json):
+        kmeans_model = KMeansAnomalyDetector()
+        kmeans_model.load(model_json)
+except Exception as e:
+    kmeans_model = None
 
 if not os.path.exists(SNS_FILE):
     with open(SNS_FILE, "w") as f:
@@ -215,6 +226,22 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
                         filename, file_bytes, custom_hint, client_labels
                     )
                     backend_source = "In-Browser Computer Vision + Rekognition Engine"
+
+                # 2.5 Run Unsupervised ML Anomaly Detection (K-Means Outlier)
+                unsupervised_metrics = None
+                if kmeans_model:
+                    try:
+                        features = extract_image_features(file_bytes)
+                        unsupervised_res = kmeans_model.predict(features)
+                        unsupervised_metrics = unsupervised_res
+                        if unsupervised_res["is_anomaly"]:
+                            is_flagged = True
+                            moderation_labels.append({
+                                "Name": f"ML Anomaly Outlier (Dist: {unsupervised_res['min_distance_to_centroid']} > {unsupervised_res['threshold']})",
+                                "Confidence": round(unsupervised_res["anomaly_score"] * 100, 1)
+                            })
+                    except Exception as e:
+                        pass
 
                 latency_ms = round((time.time() - start_time) * 1000 + 45, 1)
                 timestamp = datetime.now(timezone.utc).isoformat()

@@ -1,6 +1,18 @@
 [
   {
     "TopicArn": "arn:aws:sns:eu-west-3:123456789012:security-alerts",
+    "Subject": "\u26a0\ufe0f [ALERT] Sensitive Content Detected: Screenshot 2026-11-21 at 11.35.40\u202fPM.png",
+    "Timestamp": "2026-11-21T22:39:30.237581+00:00",
+    "Image": "Screenshot 2026-11-21 at 11.35.40\u202fPM.png",
+    "Moderation": [
+      {
+        "Name": "Weapons & Violence (Knife)",
+        "Confidence": 83.6
+      }
+    ]
+  },
+  {
+    "TopicArn": "arn:aws:sns:eu-west-3:123456789012:security-alerts",
     "Subject": "\u26a0\ufe0f [ALERT] Sensitive Content Detected: Screenshot 2026-11-21 at 11.22.05\u202fPM.png",
     "Timestamp": "2026-11-21T22:22:18.072712+00:00",
     "Image": "Screenshot 2026-11-21 at 11.22.05\u202fPM.png",

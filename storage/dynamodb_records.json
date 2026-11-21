@@ -1,5 +1,85 @@
 [
   {
+    "ImageName": "Screenshot 2026-11-21 at 11.40.21\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:40:29.475773+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "102.9 KB",
+    "LabelsCount": 4,
+    "Labels": [
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "Engine": "In-Browser Computer Vision + Rekognition Engine",
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.40.21\u202fPM.png"
+  },
+  {
+    "ImageName": "Screenshot 2026-11-21 at 11.39.57\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:40:03.775328+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "242.4 KB",
+    "LabelsCount": 4,
+    "Labels": [
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      }
+    ],
+    "IsFlagged": false,
+    "ModerationLabels": [],
+    "Engine": "In-Browser Computer Vision + Rekognition Engine",
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.39.57\u202fPM.png"
+  },
+  {
+    "ImageName": "Screenshot 2026-11-21 at 11.35.40\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:39:30.237581+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "151.3 KB",
+    "LabelsCount": 1,
+    "Labels": [
+      {
+        "Name": "Knife",
+        "Confidence": 83.6
+      }
+    ],
+    "IsFlagged": true,
+    "ModerationLabels": [
+      {
+        "Name": "Weapons & Violence (Knife)",
+        "Confidence": 83.6
+      }
+    ],
+    "Engine": "In-Browser Computer Vision + Rekognition Engine",
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.35.40\u202fPM.png"
+  },
+  {
     "ImageName": "Screenshot 2026-11-21 at 11.22.05\u202fPM.png",
     "ProcessedAt": "2026-11-21T22:22:31.548235+00:00",
     "Bucket": "image-analysis-pipeline-uploads-dev",

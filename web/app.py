@@ -36,12 +36,12 @@ if not os.path.exists(SNS_FILE):
         json.dump([], f)
 
 
-def generate_labels_for_image(filename: str, file_bytes: bytes):
+def generate_labels_for_image(filename: str, file_bytes: bytes, hint: str = ""):
     """
-    Simulates Amazon Rekognition computer vision analysis based on image content and metadata.
+    Simulates Amazon Rekognition computer vision analysis based on image content, metadata, and optional hints.
     """
-    clean_name = os.path.splitext(filename)[0].lower()
-    words = re.findall(r"[a-zA-Z]+", clean_name)
+    clean_text = f"{filename} {hint}".lower()
+    words = re.findall(r"[a-zA-Z]+", clean_text)
 
     # Keywords mapping to realistic Rekognition label sets
     keyword_map = {
@@ -59,6 +59,9 @@ def generate_labels_for_image(filename: str, file_bytes: bytes):
         "food": [("Food", 98.8), ("Meal", 97.1), ("Dish", 95.4), ("Cuisine", 92.0)],
         "weapon": [("Weapon", 96.5), ("Military", 91.2), ("Gun", 88.4)],
         "arme": [("Weapon", 96.5), ("Military", 91.2), ("Gun", 88.4)],
+        "knife": [("Knife", 98.4), ("Weapon", 95.2), ("Blade", 94.1), ("Cutlery", 89.0)],
+        "couteau": [("Knife", 98.4), ("Weapon", 95.2), ("Blade", 94.1), ("Cutlery", 89.0)],
+        "blade": [("Blade", 97.0), ("Weapon", 94.5), ("Knife", 92.0)],
     }
 
     detected = []
@@ -69,9 +72,9 @@ def generate_labels_for_image(filename: str, file_bytes: bytes):
     for word in words:
         if word in keyword_map:
             detected.extend(keyword_map[word])
-            if word in ["weapon", "arme"]:
+            if word in ["weapon", "arme", "knife", "couteau", "blade"]:
                 is_flagged = True
-                moderation_labels.append({"Name": "Weapons & Violence", "Confidence": 95.2})
+                moderation_labels.append({"Name": "Weapons & Violence (Knife)", "Confidence": 94.8})
 
     # Default labels if filename didn't match specific presets
     if not detected:
@@ -130,6 +133,7 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body.decode("utf-8"))
                 filename = data.get("filename", f"upload_{int(time.time())}.jpg")
+                custom_hint = data.get("hint", "")
                 base64_data = data.get("file_base64", "")
 
                 # Decode file bytes
@@ -145,7 +149,7 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
 
                 # 2. Trigger simulated Lambda + Rekognition
                 start_time = time.time()
-                labels, is_flagged, moderation_labels = generate_labels_for_image(filename, file_bytes)
+                labels, is_flagged, moderation_labels = generate_labels_for_image(filename, file_bytes, custom_hint)
                 latency_ms = round((time.time() - start_time) * 1000 + 45, 1)
 
                 timestamp = datetime.now(timezone.utc).isoformat()

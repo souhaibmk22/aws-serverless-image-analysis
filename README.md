@@ -1,13 +1,14 @@
-# 🚀 Event-Driven Image Analysis Pipeline with AWS Rekognition & Terraform
+# 🚀 Event-Driven Image Analysis & Unsupervised ML Pipeline with AWS & Terraform
 
 ![AWS](https://img.shields.io/badge/AWS-Serverless-orange?logo=amazon-aws)
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-blueviolet?logo=terraform)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Unsupervised%20K--Means-blue)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-brightgreen?logo=github-actions)
 
-An automated, serverless, event-driven image analysis pipeline built on **Amazon Web Services (AWS)** and provisioned via **Infrastructure as Code (Terraform)**. 
+An automated, serverless, event-driven image analysis and **Unsupervised Machine Learning anomaly detection pipeline** built on **Amazon Web Services (AWS)** and provisioned via **Infrastructure as Code (Terraform)**. 
 
-When an image is uploaded to an **Amazon S3** bucket, an automated event triggers an **AWS Lambda** function. The function leverages **Amazon Rekognition** to detect objects, labels, and unsafe content, persists the metadata to **Amazon DynamoDB**, and dispatches immediate alerts through **Amazon SNS** if sensitive content is flagged.
+The system combines managed cloud computer vision (**Amazon Rekognition**) with a custom **Unsupervised K-Means clustering algorithm** running serverless on **AWS Lambda** to detect suspicious content and anomalies without requiring pre-labeled training data.
 
 ---
 
@@ -22,31 +23,61 @@ When an image is uploaded to an **Amazon S3** bucket, an automated event trigger
 └──────────────┘Upload│   │ (Uploads)    │Event│  (Python)  │   │
                       │   └──────────────┘     └──────┬─────┘   │
                       │                               │         │
-                      │           ┌───────────────────┼─────────┼───────────┐
-                      │           │                   │         │           │
-                      │           ▼                   ▼         ▼           │
-                      │   ┌──────────────┐    ┌──────────────┐ ┌──────────┐ │
-                      │   │Amazon        │    │Amazon        │ │Amazon    │ │
-                      │   │Rekognition   │    │DynamoDB      │ │SNS       │ │
-                      │   │(AI Detection)│    │(Metadata DB) │ │(Alerts)  │ │
-                      │   └──────────────┘    └──────────────┘ └────┬─────┘ │
-                      │                                             │       │
-                      └─────────────────────────────────────────────┼───────┘
-                                                                    ▼
-                                                            ┌──────────────┐
-                                                            │ Email Alert  │
-                                                            └──────────────┘
+                      │           ┌───────────────────┼─────────┴─────────────┐
+                      │           │                   │                       │
+                      │           ▼                   ▼                       ▼
+                      │   ┌──────────────┐    ┌──────────────┐       ┌─────────────────┐
+                      │   │Amazon        │    │Unsupervised  │       │Amazon DynamoDB  │
+                      │   │Rekognition   │    │K-Means Model │       │(NoSQL Results)  │
+                      │   │(Vision AI)   │    │(Outlier Det.)│       └────────┬────────┘
+                      │   └──────────────┘    └───────┬──────┘                │
+                      │                               │                       │
+                      │                               ▼                       ▼
+                      │                       ┌──────────────┐        ┌──────────────┐
+                      │                       │Amazon SNS    │───────►│ Admin Alert  │
+                      │                       │(Security)    │        │ (Email/SMS)  │
+                      │                       └──────────────┘        └──────────────┘
+                      └───────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🧠 Unsupervised Machine Learning Engine (K-Means Anomaly Detection)
+
+In high-security and content moderation environments, labeled threat datasets are rarely available. This project implements an **Unsupervised Learning** approach: the model learns the mathematical baseline of normal images and flags statistical outliers as anomalies.
+
+### 1. Feature Engineering (`feature_extractor.py`)
+Each incoming image is transformed into a **64-dimensional numerical feature vector** in $<5\text{ms}$:
+- **Color Distributions (48 features):** 16-bin histograms across color projections.
+- **Edge & Gradient Gradients (8 features):** Luminance contrast and edge density.
+- **Statistical Moments (4 features):** Mean intensity, variance, standard deviation, and energy.
+- **Compression & Highlight Density (4 features):** Shadow/highlight distribution and entropy proxies.
+
+### 2. K-Means Clustering & Decision Boundary (`kmeans_engine.py`)
+- Groups baseline images into $K=3$ distinct geometric clusters without supervision ($Y$ labels do not exist).
+- Iteratively computes optimal cluster centroids $\mu_1, \mu_2, \dots, \mu_K$.
+- Computes an automated statistical anomaly threshold:
+  $$\tau = \mu_{\text{dist}} + 2.5 \times \sigma_{\text{dist}}$$
+
+### 3. Real-Time Outlier Prediction
+For any new image vector $x$, the Euclidean distance to the nearest centroid is evaluated:
+$$d(x) = \min_{k} \|x - \mu_k\|_2$$
+- If $d(x) \le \tau$ : The image conforms to normal patterns (**Normal**).
+- If $d(x) > \tau$ : The image is a statistical outlier (**Suspicious / Anomaly Detected**).
+
+### 4. Cloud Serverless Integration (`lambda_unsupervised.py`)
+The trained model (`kmeans_model.json`) is loaded outside the Lambda handler (warm start) to deliver **sub-10ms serverless inference** directly inside the AWS ingestion pipeline.
 
 ---
 
 ## 🛠️ Key Technologies & AWS Services
 
-- **Compute:** AWS Lambda (Python 3.12 / Boto3)
-- **Storage:** Amazon S3 (Server-Side Encryption AES256, Block Public Access)
-- **Database:** Amazon DynamoDB (NoSQL, On-Demand Capacity)
-- **Machine Learning / AI:** Amazon Rekognition (Computer Vision: Object, Scene, and Content Moderation)
-- **Alerting & Messaging:** Amazon SNS (Automated Email Notifications)
+- **Compute & Serverless ML:** AWS Lambda (Python 3.12 / Boto3 / NumPy-free pure ML)
+- **Machine Learning:** Unsupervised K-Means Clustering, Euclidean Anomaly Detection, In-Browser Computer Vision
+- **Storage:** Amazon S3 (Server-Side Encryption AES-256, Block Public Access)
+- **Database:** Amazon DynamoDB (NoSQL, On-Demand Capacity, Single-digit ms latency)
+- **Managed AI:** Amazon Rekognition (Computer Vision: Object Detection & Content Moderation)
+- **Alerting & Messaging:** Amazon SNS (Publish/Subscribe Automated Security Alerts)
 - **Monitoring & Security:** Amazon CloudWatch Logs & IAM (Principle of Least Privilege)
 - **Infrastructure as Code (IaC):** HashiCorp Terraform
 - **CI/CD:** GitHub Actions
@@ -57,17 +88,28 @@ When an image is uploaded to an **Amazon S3** bucket, an automated event trigger
 
 ```
 ├── .github/workflows/
-│   └── ci.yml               # Automated GitHub Actions unit test workflow
-├── architecture/            # Architecture diagrams
+│   └── ci.yml                     # Automated GitHub Actions test workflow
+├── architecture/
+│   └── diagram.svg                # Vector architecture diagram
+├── ml_unsupervised/
+│   ├── feature_extractor.py       # 64-dim image feature extractor
+│   ├── kmeans_engine.py           # K-Means clustering & Euclidean outlier engine
+│   ├── kmeans_model.json          # Exported centroids & decision threshold
+│   ├── train_kmeans.py            # Unsupervised training script
+│   ├── detect_anomaly.py          # CLI anomaly detector
+│   └── lambda_unsupervised.py     # Production AWS Lambda ML handler
 ├── src/
-│   └── lambda_function.py   # Core Lambda processing logic
+│   └── lambda_function.py         # Rekognition & S3 event handler
 ├── tests/
-│   ├── mock_event.json      # S3 test payload
-│   └── test_lambda.py       # Python unit tests with mocks
+│   ├── mock_event.json            # S3 test payload
+│   └── test_lambda.py             # Automated unit tests
+├── web/
+│   ├── app.py                     # Local web server & AWS API bridge
+│   └── index.html                 # Interactive drag-and-drop dashboard
 ├── terraform/
-│   ├── main.tf              # Full infrastructure definition
-│   ├── variables.tf         # Configurable parameters
-│   ├── outputs.tf           # Resource ARNs and outputs
+│   ├── main.tf                    # Complete infrastructure definition
+│   ├── variables.tf               # Configurable parameters
+│   ├── outputs.tf                 # Resource ARNs and outputs
 │   └── terraform.tfvars.example
 ├── .gitignore
 └── README.md
@@ -77,16 +119,29 @@ When an image is uploaded to an **Amazon S3** bucket, an automated event trigger
 
 ## 🧪 Testing Locally
 
-You can run the automated unit tests without an AWS account:
-
+### 1. Run Automated Unit Tests:
 ```bash
-# Run unit tests
 python3 -m unittest discover tests
+```
+
+### 2. Train and Run the Unsupervised ML Model:
+```bash
+# Train K-Means centroids and compute threshold
+python3 ml_unsupervised/train_kmeans.py
+
+# Test anomaly detection on any image file
+python3 ml_unsupervised/detect_anomaly.py path/to/image.jpg
+```
+
+### 3. Launch the Interactive Web Dashboard:
+```bash
+python3 web/app.py
+# Open http://localhost:8000 in your browser to test drag-and-drop uploads
 ```
 
 ---
 
-## 🚀 Deployment (When ready to deploy to AWS)
+## 🚀 Cloud Deployment (Terraform)
 
 1. **Configure AWS Credentials:**
    ```bash
@@ -97,7 +152,7 @@ python3 -m unittest discover tests
    ```bash
    cd terraform
    cp terraform.tfvars.example terraform.tfvars
-   # Edit terraform.tfvars with your email and preferred region
+   # Configure alert_email and aws_region in terraform.tfvars
 
    terraform init
    terraform plan
@@ -107,10 +162,12 @@ python3 -m unittest discover tests
 3. **Verify Deployment:**
    - Upload an image to the generated S3 bucket:
      ```bash
-     aws s3 cp test.jpg s3://$(terraform output -raw s3_bucket_name)/
+     aws s3 cp image.jpg s3://$(terraform output -raw s3_bucket_name)/
      ```
-   - Check DynamoDB for the generated analysis record.
-   - If flagged, check your inbox for an instant SNS security alert.
+   - Check DynamoDB for the generated analysis record and ML anomaly score.
+   - If an anomaly is detected, check your inbox for an instant SNS security alert.
 
----
-
+4. **Cleanup (Zero cost):**
+   ```bash
+   terraform destroy
+   ```

@@ -1,5 +1,39 @@
 [
   {
+    "ImageName": "Screenshot 2026-11-21 at 11.50.45\u202fPM.png",
+    "ProcessedAt": "2026-11-21T22:50:51.873116+00:00",
+    "Bucket": "image-analysis-pipeline-uploads-dev",
+    "FileSize": "130.1 KB",
+    "LabelsCount": 4,
+    "Labels": [
+      {
+        "Name": "Digital Image",
+        "Confidence": 99.0
+      },
+      {
+        "Name": "Photograph",
+        "Confidence": 98.2
+      },
+      {
+        "Name": "Visual Artwork",
+        "Confidence": 93.5
+      },
+      {
+        "Name": "Media Asset",
+        "Confidence": 89.0
+      }
+    ],
+    "IsFlagged": true,
+    "ModerationLabels": [
+      {
+        "Name": "ML Anomaly Outlier (Dist: 2.3385 > 1.2531)",
+        "Confidence": 100.0
+      }
+    ],
+    "Engine": "In-Browser Computer Vision + Rekognition Engine",
+    "ImageUrl": "/s3/Screenshot 2026-11-21 at 11.50.45\u202fPM.png"
+  },
+  {
     "ImageName": "Screenshot 2026-11-21 at 11.40.21\u202fPM.png",
     "ProcessedAt": "2026-11-21T22:40:29.475773+00:00",
     "Bucket": "image-analysis-pipeline-uploads-dev",

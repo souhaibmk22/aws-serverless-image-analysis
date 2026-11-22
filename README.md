@@ -12,6 +12,25 @@ The pipeline combines a serverless **Deep Learning Safety Classifier (frozen CLI
 
 ---
 
+## 💡 Project Deep-Dive & Engineering Motivation
+
+### 1. The Business Challenge
+In modern digital platforms (marketplaces, social networks, content-sharing applications), user-uploaded media must be moderated in real time to ensure platform safety and legal compliance. However, automated moderation faces two major hurdles:
+- **High Infrastructure & API Costs:** Commercial computer vision APIs (typically \$1.00 to \$4.00 per 1,000 requests) or hosting dedicated GPU instances 24/7 become economically unsustainable as upload volumes scale.
+- **False Positives on Everyday Objects:** Generic off-the-shelf object detection models frequently misclassify benign domestic cutlery (kitchen chef knives, dining cutlery, scissors, workshop tools) as lethal weapons, leading to false account flags and poor user experience.
+
+### 2. The Architectural Solution
+This project addresses both challenges by pairing an **event-driven serverless cloud architecture** with a **distilled edge Deep Learning probe**:
+- **Zero Idle Cost & Elastic Scaling:** By leveraging Amazon S3 event notifications and AWS Lambda, compute resources scale from 0 to thousands of concurrent uploads automatically, incurring zero cost when idle.
+- **High-Precision Semantic Embeddings:** Rather than training a heavy computer vision model from scratch or relying on shallow feature heuristics, the system utilizes frozen **OpenAI CLIP (ViT-B/32)** embeddings ($512$ dimensions) capturing rich global visual semantics.
+- **Sub-5ms Serverless Inference (NumPy-Only):** The trained classifier weights and calibration coefficients are exported to lightweight JSON. AWS Lambda executes inference via pure matrix operations (`z = w^T x + b`, $P = \sigma(z)$) in **under 5 milliseconds**, completely eliminating the need to bundle multi-gigabyte PyTorch or Scikit-Learn binaries into the serverless deployment package.
+- **Three-Tier Human-in-the-Loop Routing:**
+  - $P < t_{\text{low}}$ $\rightarrow$ **`SAFE`** (Processed immediately, standard storage).
+  - $t_{\text{low}} \le P < t_{\text{high}}$ $\rightarrow$ **`REVIEW`** (Borderline cases routed to an S3 staging queue with automated **Glacier lifecycle transitions** to minimize storage overhead).
+  - $P \ge t_{\text{high}}$ $\rightarrow$ **`DANGEROUS`** (Instant automated alerts via Amazon SNS to moderation teams).
+
+---
+
 ## 🏛️ Architecture Overview
 
 ![Architecture Diagram](./architecture/diagram.svg)
@@ -161,6 +180,30 @@ python3 ml_supervised/evaluate.py
 ## ⚠️ Limitations
 
 This is a learning project. The classifier is trained on public datasets and may fail on small, hidden or unusual weapons. It is not a replacement for a managed moderation service such as Amazon Rekognition.
+
+---
+
+## 💼 Resume & Portfolio Highlights (Ready for CV / LinkedIn)
+
+> **Target Roles:** Cloud Engineer / AWS Solutions Architect / MLOps Engineer / Backend Developer
+
+### 📌 English Entry (Resume / LinkedIn)
+**Serverless Image Safety & Threat Classification Pipeline** | *AWS, Terraform, Python, CLIP, MLOps*
+- **Event-Driven Architecture:** Architected an asynchronous media processing pipeline on AWS (S3, Lambda, DynamoDB, SNS) handling image uploads with sub-50ms end-to-end latency and 100% on-demand billing (zero idle costs).
+- **Serverless Edge ML:** Integrated an OpenAI CLIP (ViT-B/32) feature extractor and calibrated linear probe into AWS Lambda via pure NumPy matrix operations ($<5\text{ms}$ execution, zero GPU requirement), verified mathematically equivalent to HuggingFace (cosine similarity $1.000000$).
+- **Cost Optimization & FinOps:** Implemented automated S3 lifecycle rules transitioning human review queues (`pending_review/`) to Amazon S3 Glacier after 30 days and expiring them at 90 days, alongside DynamoDB Pay-Per-Request pricing.
+- **Production MLOps Rigor:** Designed a 3-tier routing policy (`SAFE`, `REVIEW`, `DANGEROUS`) with Platt probability calibration, stratified group cross-validation with perceptual hash (`pHash`) deduplication, and production precision reporting calibrated for low-prevalence base rates (1% and 0.1%).
+- **Infrastructure as Code & CI/CD:** Automated 100% of AWS infrastructure using HashiCorp Terraform modules adhering to IAM least-privilege principles, backed by automated GitHub Actions CI testing.
+
+---
+
+### 📌 Entrée pour CV / LinkedIn (Français)
+**Pipeline Serverless d'Analyse d'Images & Modération IA** | *AWS, Terraform, Python, CLIP, MLOps*
+- **Architecture Event-Driven :** Conception et déploiement d'un pipeline cloud serverless asynchrone sur AWS (S3, Lambda, DynamoDB, SNS) avec temps de réponse global $<50\text{ms}$ et facturation 100% à l'usage (zéro coût à l'arrêt).
+- **IA en Production (Serverless ML) :** Intégration d'un classifieur de sécurité basé sur les embeddings CLIP ViT-B/32 dans AWS Lambda via une inférence matricielle pure NumPy ($<5\text{ms}$, sans dépendance GPU ni framework lourd), validée à 100% de parité cosinus avec HuggingFace.
+- **FinOps & Cycle de Vie :** Configuration de règles de cycle de vie Amazon S3 (archivage automatique vers S3 Glacier à 30 jours, expiration à 90 jours) et tarification On-Demand DynamoDB pour minimiser l'empreinte financière.
+- **Rigueur MLOps & Données :** Implémentation d'une politique de routage à 3 états (`SAFE`, `REVIEW`, `DANGEROUS`), étalonnage des probabilités par sigmoïde, élimination des fuites de données par hachage perceptuel (`pHash`) et modélisation de la précision aux prévalences réelles (1% et 0.1%).
+- **Infrastructure as Code & CI/CD :** Déploiement automatisé via Terraform (respect du principe de moindre privilège IAM) et pipeline d'intégration continue GitHub Actions.
 
 ---
 

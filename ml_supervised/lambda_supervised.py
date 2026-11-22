@@ -1,7 +1,7 @@
 """
 Production AWS Lambda Handler for Supervised Image Safety Classification.
 Supports:
-1. Swappable ENGINE via environment variable (CLIP_SUPERVISED, REKOGNITION, UNSUPERVISED_KMEANS).
+1. Swappable ENGINE via environment variable (CLIP_SUPERVISED, REKOGNITION).
 2. Pure NumPy logistic inference using exported weights (zero scikit-learn dependency).
 3. Routing policy:
    - SAFE: Status 'SAFE', stored in DynamoDB.

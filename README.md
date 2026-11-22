@@ -76,16 +76,6 @@ $$\text{Precision}(\pi) = \frac{\text{Recall} \times \pi}{\text{Recall} \times \
 
 ---
 
-## 🔬 Auxiliary Engine: Unsupervised Anomaly Detection (K-Means)
-
-In addition to the supervised CLIP classifier, the repository maintains an **Unsupervised K-Means Anomaly Detection Engine** in `ml_unsupervised/`:
-- Extracts a 64-dimensional feature vector (color histograms, luminance gradients, statistical moments).
-- Clusters normal image patterns into $K=3$ centroids and defines an anomaly boundary:
-  $$\tau = \mu_{\text{dist}} + 2.5 \times \sigma_{\text{dist}}$$
-- Plugs into AWS Lambda (`lambda_unsupervised.py`) via the configurable `ENGINE` environment variable (`CLIP_SUPERVISED`, `UNSUPERVISED_KMEANS`, or `REKOGNITION`).
-
----
-
 ## 🛠️ Key Technologies & AWS Services
 
 - **Computer Vision & ML:** OpenAI CLIP (ViT-B/32), Scikit-Learn, PyTorch, Pure NumPy inference
@@ -116,13 +106,6 @@ In addition to the supervised CLIP classifier, the repository maintains an **Uns
 │   ├── train_mvp.py               # 5-fold CV, sigmoid calibration & double thresholding
 │   ├── evaluate.py                # Single test evaluation (prevalences 50%, 1%, 0.1%)
 │   └── lambda_supervised.py       # Production serverless handler with pending_review routing
-├── ml_unsupervised/
-│   ├── feature_extractor.py       # 64-dim image feature extractor
-│   ├── kmeans_engine.py           # K-Means clustering & Euclidean outlier engine
-│   ├── kmeans_model.json          # Exported centroids & decision threshold
-│   ├── train_kmeans.py            # Unsupervised training script
-│   ├── detect_anomaly.py          # CLI anomaly detector
-│   └── lambda_unsupervised.py     # Production AWS Lambda ML handler
 ├── src/
 │   └── lambda_function.py         # Rekognition & S3 event handler
 ├── tests/

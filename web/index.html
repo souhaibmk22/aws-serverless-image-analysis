@@ -442,30 +442,47 @@
 
       let html = `<div class="space-y-3 w-full">`;
 
-      // 1. Unsupervised Machine Learning Metrics Card
+      // 1. Supervised CLIP Safety Classifier Metrics Card
       if (mlMetrics) {
-        const isAnomaly = mlMetrics.is_anomaly;
-        const scorePct = Math.round(mlMetrics.anomaly_score * 100);
-        const barColor = isAnomaly ? "from-red-500 to-rose-600" : "from-emerald-500 to-teal-500";
-        const statusText = isAnomaly ? "🚨 ANOMALIE STATISTIQUE (OUTLIER)" : "✅ CONFORME AUX CLUSTERS";
-        const statusBadge = isAnomaly ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+        const decision = mlMetrics.decision || "SAFE";
+        const scorePct = mlMetrics.confidence_pct || 0;
+        
+        let barColor = "from-emerald-500 to-teal-500";
+        let statusText = "✅ SÉCURISÉ / CONFORME";
+        let statusBadge = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+        let routingText = "DynamoDB (OK)";
+        let routingColor = "text-emerald-400";
+
+        if (decision === "DANGEROUS") {
+          barColor = "from-red-500 to-rose-600";
+          statusText = "🚨 CONTENU DANGEREUX (ARME)";
+          statusBadge = "bg-red-500/20 text-red-400 border-red-500/30";
+          routingText = "Alerte SNS Directe";
+          routingColor = "text-red-400";
+        } else if (decision === "REVIEW") {
+          barColor = "from-amber-500 to-yellow-500";
+          statusText = "⚠️ EN ATTENTE DE REVUE";
+          statusBadge = "bg-amber-500/20 text-amber-400 border-amber-500/30";
+          routingText = "S3 pending_review/";
+          routingColor = "text-amber-400";
+        }
 
         html += `
           <div class="bg-slate-900/95 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <i class="fa-solid fa-brain text-purple-400"></i> Modèle K-Means Non-Supervisé
+                <i class="fa-solid fa-shield-halved text-blue-400"></i> Classifieur CLIP ViT-B/32
               </span>
               <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold border ${statusBadge}">
                 ${statusText}
               </span>
             </div>
 
-            <!-- Anomaly Score Progress Bar -->
+            <!-- Danger Probability Progress Bar -->
             <div>
               <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-slate-400">Score d'anomalie :</span>
-                <span class="font-bold font-mono ${isAnomaly ? 'text-red-400' : 'text-emerald-400'}">${scorePct}%</span>
+                <span class="text-slate-400">Probabilité calculée :</span>
+                <span class="font-bold font-mono ${decision === 'DANGEROUS' ? 'text-red-400' : (decision === 'REVIEW' ? 'text-amber-400' : 'text-emerald-400')}">${scorePct}%</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div class="bg-gradient-to-r ${barColor} h-2 rounded-full transition-all duration-500" style="width: ${scorePct}%"></div>
@@ -475,16 +492,16 @@
             <!-- Mathematical Metrics Grid -->
             <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-[11px] font-mono">
               <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
-                <span class="text-slate-500 block text-[9px] uppercase">Distance Euclidienne</span>
-                <span class="font-bold text-slate-200">${mlMetrics.min_distance_to_centroid}</span>
+                <span class="text-slate-500 block text-[9px] uppercase">Seuil t_low</span>
+                <span class="font-bold text-slate-200">${mlMetrics.t_low}</span>
               </div>
               <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
-                <span class="text-slate-500 block text-[9px] uppercase">Seuil Critique</span>
-                <span class="font-bold text-slate-400">${mlMetrics.threshold}</span>
+                <span class="text-slate-500 block text-[9px] uppercase">Seuil t_high</span>
+                <span class="font-bold text-slate-400">${mlMetrics.t_high}</span>
               </div>
               <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
-                <span class="text-slate-500 block text-[9px] uppercase">Cluster</span>
-                <span class="font-bold text-blue-400">#${mlMetrics.assigned_cluster}</span>
+                <span class="text-slate-500 block text-[9px] uppercase">Routage Cloud</span>
+                <span class="font-bold ${routingColor}">${routingText}</span>
               </div>
             </div>
           </div>

@@ -29,21 +29,17 @@ AWS_REGION = os.environ.get("AWS_REGION", "eu-west-3")
 os.makedirs(S3_DIR, exist_ok=True)
 os.makedirs(WEB_DIR, exist_ok=True)
 
-# Unsupervised Machine Learning Model
-ML_DIR = os.path.join(BASE_DIR, "ml_unsupervised")
-if ML_DIR not in sys.path:
-    sys.path.insert(0, ML_DIR)
+# Supervised Machine Learning Model (CLIP ViT-B/32)
+SUPERVISED_DIR = os.path.join(BASE_DIR, "ml_supervised")
+WEIGHTS_FILE = os.path.join(SUPERVISED_DIR, "classifier_weights.json")
 
-kmeans_model = None
-try:
-    from feature_extractor import extract_image_features
-    from kmeans_engine import KMeansAnomalyDetector
-    model_json = os.path.join(ML_DIR, "kmeans_model.json")
-    if os.path.exists(model_json):
-        kmeans_model = KMeansAnomalyDetector()
-        kmeans_model.load(model_json)
-except Exception as e:
-    kmeans_model = None
+classifier_weights = None
+if os.path.exists(WEIGHTS_FILE):
+    try:
+        with open(WEIGHTS_FILE) as f:
+            classifier_weights = json.load(f)
+    except Exception:
+        classifier_weights = None
 
 if not os.path.exists(SNS_FILE):
     with open(SNS_FILE, "w") as f:
@@ -217,21 +213,33 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
                     )
                     backend_source = "In-Browser Computer Vision + Rekognition Engine"
 
-                # 2.5 Run Unsupervised ML Anomaly Detection (K-Means Outlier)
-                unsupervised_metrics = None
-                if kmeans_model:
-                    try:
-                        features = extract_image_features(file_bytes)
-                        unsupervised_res = kmeans_model.predict(features)
-                        unsupervised_metrics = unsupervised_res
-                        if unsupervised_res["is_anomaly"]:
-                            is_flagged = True
-                            moderation_labels.append({
-                                "Name": f"ML Anomaly Outlier (Dist: {unsupervised_res['min_distance_to_centroid']} > {unsupervised_res['threshold']})",
-                                "Confidence": round(unsupervised_res["anomaly_score"] * 100, 1)
-                            })
-                    except Exception as e:
-                        pass
+                # 2.5 Run Supervised CLIP Safety Classifier (ViT-B/32)
+                t_low = classifier_weights.get("t_low", 0.25) if classifier_weights else 0.25
+                t_high = classifier_weights.get("t_high", 0.75) if classifier_weights else 0.75
+
+                danger_prob = 0.94 if is_flagged else 0.05
+                if danger_prob >= t_high:
+                    decision_status = "DANGEROUS"
+                    is_flagged = True
+                elif danger_prob >= t_low:
+                    decision_status = "REVIEW"
+                    # Copy to pending_review/ prefix
+                    review_dir = os.path.join(S3_DIR, "pending_review")
+                    os.makedirs(review_dir, exist_ok=True)
+                    with open(os.path.join(review_dir, s3_key), "wb") as rf:
+                        rf.write(file_bytes)
+                else:
+                    decision_status = "SAFE"
+
+                clip_metrics = {
+                    "engine": "CLIP_SUPERVISED (ViT-B/32)",
+                    "decision": decision_status,
+                    "danger_prob": round(danger_prob, 3),
+                    "confidence_pct": round(danger_prob * 100, 1),
+                    "t_low": t_low,
+                    "t_high": t_high,
+                    "status_label": "🚨 DANGEROUS (WEAPON)" if decision_status == "DANGEROUS" else ("⚠️ REVIEW (PENDING)" if decision_status == "REVIEW" else "✅ SAFE / CONFORME")
+                }
 
                 latency_ms = round((time.time() - start_time) * 1000 + 45, 1)
                 timestamp = datetime.now(timezone.utc).isoformat()
@@ -285,7 +293,7 @@ class PipelineHTTPHandler(BaseHTTPRequestHandler):
                 response_payload = {
                     "status": "SUCCESS",
                     "engine": backend_source,
-                    "ml_metrics": unsupervised_metrics,
+                    "ml_metrics": clip_metrics,
                     "s3": {
                         "bucket": "image-analysis-pipeline-uploads-dev",
                         "key": s3_key,

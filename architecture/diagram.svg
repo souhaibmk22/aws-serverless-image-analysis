@@ -37,13 +37,13 @@
     <text x="435" y="213" font-size="12" fill="#71717a" text-anchor="middle">Python 3.12</text>
   </g>
 
-  <!-- 4. Branch 1: K-Means model (Anomaly detection) -->
+  <!-- 4. Branch 1: Safety Classifier (CLIP ViT-B/32) -->
   <g>
     <rect x="585" y="30" width="245" height="64" rx="10" fill="#ffffff" stroke="#e4e4e7" stroke-width="1.5"/>
-    <text x="707" y="59" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">K-Means model</text>
-    <text x="707" y="78" font-size="12" fill="#71717a" text-anchor="middle">Anomaly detection</text>
+    <text x="707" y="59" font-size="14" font-weight="600" fill="#09090b" text-anchor="middle">Safety Classifier</text>
+    <text x="707" y="78" font-size="12" fill="#71717a" text-anchor="middle">CLIP ViT-B/32</text>
   </g>
-  <!-- Arrow: Lambda -> K-Means model -->
+  <!-- Arrow: Lambda -> Safety Classifier -->
   <line x1="505" y1="185" x2="580" y2="70" stroke="#71717a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
   <!-- 5. Branch 2: Amazon DynamoDB (Stores results) -->

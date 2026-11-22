@@ -1,14 +1,14 @@
-# 🚀 Event-Driven Image Analysis & Unsupervised ML Pipeline with AWS & Terraform
+# 🚀 Serverless Image Safety & Threat Classification Pipeline on AWS (CLIP + Terraform)
 
 ![AWS](https://img.shields.io/badge/AWS-Serverless-orange?logo=amazon-aws)
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-blueviolet?logo=terraform)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
-![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Unsupervised%20K--Means-blue)
+![Machine Learning](https://img.shields.io/badge/Machine%20Learning-CLIP%20ViT--B%2F32-blue)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-brightgreen?logo=github-actions)
 
-An automated, serverless, event-driven image analysis and **Unsupervised Machine Learning anomaly detection pipeline** built on **Amazon Web Services (AWS)** and provisioned via **Infrastructure as Code (Terraform)**. 
+An automated, event-driven image safety and threat classification system built on **Amazon Web Services (AWS)** and provisioned via **Infrastructure as Code (Terraform)**.
 
-The system combines managed cloud computer vision (**Amazon Rekognition**) with a custom **Unsupervised K-Means clustering algorithm** running serverless on **AWS Lambda** to detect suspicious content and anomalies without requiring pre-labeled training data.
+The pipeline combines a serverless **Deep Learning Safety Classifier (frozen CLIP ViT-B/32 embeddings + calibrated linear probe)** with cloud-native automation (**Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SNS**) and optional managed computer vision (**Amazon Rekognition**). It detects firearms and combat weapons while reliably rejecting hard negatives (kitchen cutlery, domestic tools, toys).
 
 ---
 
@@ -21,7 +21,7 @@ flowchart LR
     Client["Client<br/><small>Upload image</small>"] --> S3["Amazon S3<br/><small>Storage</small>"]
     S3 --> Lambda["AWS Lambda<br/><small>Python 3.12</small>"]
     
-    Lambda --> KMeans["K-Means model<br/><small>Anomaly detection</small>"]
+    Lambda --> Classifier["Safety Classifier<br/><small>CLIP ViT-B/32 + Probe</small>"]
     Lambda --> Dynamo["Amazon DynamoDB<br/><small>Stores results</small>"]
     Lambda --> SNS["Amazon SNS<br/><small>Email alert</small>"]
     Lambda -.-> Rekog["Amazon Rekognition<br/><small>Optional alternative</small>"]
@@ -29,45 +29,53 @@ flowchart LR
 
 ---
 
-## 🧠 Unsupervised Machine Learning Engine (K-Means Anomaly Detection)
+## 🧠 Machine Learning Engine: Supervised Image Safety Classifier
 
-In high-security and content moderation environments, labeled threat datasets are rarely available. This project implements an **Unsupervised Learning** approach: the model learns the mathematical baseline of normal images and flags statistical outliers as anomalies.
+In content moderation and security pipelines, off-the-shelf vision models often misclassify benign objects (e.g., mistaking a kitchen chef knife for a weapon, or failing on firearms). This project implements a dedicated **CLIP-powered image safety classifier** designed for high recall and calibrated uncertainty.
 
-### 1. Feature Engineering (`feature_extractor.py`)
-Each incoming image is transformed into a **64-dimensional numerical feature vector** in $<5\text{ms}$:
-- **Color Distributions (48 features):** 16-bin histograms across color projections.
-- **Edge & Gradient Gradients (8 features):** Luminance contrast and edge density.
-- **Statistical Moments (4 features):** Mean intensity, variance, standard deviation, and energy.
-- **Compression & Highlight Density (4 features):** Shadow/highlight distribution and entropy proxies.
+### 1. Visual Feature Backbone (CLIP ViT-B/32)
+Each incoming image is mapped to a **512-dimensional $L_2$-normalized dense visual embedding** using the frozen vision transformer `openai/clip-vit-base-patch32`:
+- **Parity-verified preprocessing:** Implements pure Pillow/NumPy preprocessing (`preprocess_image_pure_pil`) running in $<15\text{ms}$ that matches HuggingFace's official `CLIPProcessor` with **cosine similarity of 1.000000** ($> 0.999$).
+- **Zero heavy runtime dependency:** The classifier weights and intercept are exported to JSON (`classifier_weights.json`), enabling **pure NumPy serverless inference** ($< 5\text{ms}$) in AWS Lambda without needing full PyTorch or Scikit-Learn binaries.
 
-### 2. K-Means Clustering & Decision Boundary (`kmeans_engine.py`)
-- Groups baseline images into $K=3$ distinct geometric clusters without supervision ($Y$ labels do not exist).
-- Iteratively computes optimal cluster centroids $\mu_1, \mu_2, \dots, \mu_K$.
-- Computes an automated statistical anomaly threshold:
+### 2. Stratified Group Cross-Validation & Calibration
+- **Leakage Prevention:** Groups near-duplicates and augmented copies using perceptual hashing (`imagehash.phash`) so identical scenes never leak between train, validation, and test splits (70% train / 15% validation / 15% test).
+- **Hard Negative Mining:** Enforces $\ge 15\%$ hard negatives (kitchen knives, scissors, workshop tools, water guns, fencing equipment) labeled strictly as `SAFE` (Class 0).
+- **Probability Calibration:** Employs Platt scaling (`CalibratedClassifierCV(method='sigmoid')`) to produce reliable posterior probabilities:
+  $$P(\text{Dangerous} \mid x) = \frac{1}{1 + e^{-(\alpha \cdot z + \beta)}}$$
+- **Shortcut Learning Defense:** Includes a domain source classifier (`train_source_classifier.py`) to verify that the model learns actual weapon geometry rather than dataset background artifacts.
+
+### 3. Three-Tier Decision Policy & S3 Routing
+Dual thresholds ($t_{\text{low}}$ and $t_{\text{high}}$) are calibrated strictly on the validation set to balance recall and precision:
+1. **`SAFE`** ($P < t_{\text{low}}$): High confidence safe image. Logged to DynamoDB; normal storage.
+2. **`REVIEW`** ($t_{\text{low}} \le P < t_{\text{high}}$): Uncertain boundary case. Automatically copied to the S3 `pending_review/` prefix. Terraform provisions an S3 lifecycle rule that transitions these images to **Amazon S3 Glacier** after 30 days and expires them after 90 days.
+3. **`DANGEROUS`** ($P \ge t_{\text{high}}$): Confirmed threat. Publishes an immediate security alert via **Amazon SNS** (email/SMS) and logs flags in DynamoDB.
+
+### 4. Production Prevalence Math
+While balanced test sets (50% prevalence) show high precision ($> 90\%$), real-world production environments typically exhibit low threat prevalences (e.g., $1\%$ or $0.1\%$). The evaluation pipeline reports precision adjusted for real-world base rates $\pi$:
+$$\text{Precision}(\pi) = \frac{\text{Recall} \times \pi}{\text{Recall} \times \pi + \text{FPR} \times (1 - \pi)}$$
+
+---
+
+## 🔬 Auxiliary Engine: Unsupervised Anomaly Detection (K-Means)
+
+In addition to the supervised CLIP classifier, the repository maintains an **Unsupervised K-Means Anomaly Detection Engine** in `ml_unsupervised/`:
+- Extracts a 64-dimensional feature vector (color histograms, luminance gradients, statistical moments).
+- Clusters normal image patterns into $K=3$ centroids and defines an anomaly boundary:
   $$\tau = \mu_{\text{dist}} + 2.5 \times \sigma_{\text{dist}}$$
-
-### 3. Real-Time Outlier Prediction
-For any new image vector $x$, the Euclidean distance to the nearest centroid is evaluated:
-$$d(x) = \min_{k} \|x - \mu_k\|_2$$
-- If $d(x) \le \tau$ : The image conforms to normal patterns (**Normal**).
-- If $d(x) > \tau$ : The image is a statistical outlier (**Suspicious / Anomaly Detected**).
-
-### 4. Cloud Serverless Integration (`lambda_unsupervised.py`)
-The trained model (`kmeans_model.json`) is loaded outside the Lambda handler (warm start) to deliver **sub-10ms serverless inference** directly inside the AWS ingestion pipeline.
+- Plugs into AWS Lambda (`lambda_unsupervised.py`) via the configurable `ENGINE` environment variable (`CLIP_SUPERVISED`, `UNSUPERVISED_KMEANS`, or `REKOGNITION`).
 
 ---
 
 ## 🛠️ Key Technologies & AWS Services
 
-- **Compute & Serverless ML:** AWS Lambda (Python 3.12 / Boto3 / NumPy-free pure ML)
-- **Machine Learning:** Unsupervised K-Means Clustering, Euclidean Anomaly Detection, In-Browser Computer Vision
-- **Storage:** Amazon S3 (Server-Side Encryption AES-256, Block Public Access)
-- **Database:** Amazon DynamoDB (NoSQL, On-Demand Capacity, Single-digit ms latency)
-- **Managed AI:** Amazon Rekognition (Computer Vision: Object Detection & Content Moderation)
-- **Alerting & Messaging:** Amazon SNS (Publish/Subscribe Automated Security Alerts)
-- **Monitoring & Security:** Amazon CloudWatch Logs & IAM (Principle of Least Privilege)
+- **Computer Vision & ML:** OpenAI CLIP (ViT-B/32), Scikit-Learn, PyTorch, Pure NumPy inference
+- **Serverless Compute:** AWS Lambda (Python 3.12 / Event-driven S3 triggers)
+- **Object Storage & Lifecycle:** Amazon S3 (AES-256 encryption, Glacier transition & expiration rules)
+- **NoSQL Database:** Amazon DynamoDB (On-Demand capacity, single-digit millisecond latency)
+- **Messaging & Alerting:** Amazon SNS (Automated security incident notifications)
 - **Infrastructure as Code (IaC):** HashiCorp Terraform
-- **CI/CD:** GitHub Actions
+- **CI/CD & Testing:** GitHub Actions, Python `unittest`
 
 ---
 
@@ -163,13 +171,19 @@ This is a learning project. The classifier is trained on public datasets and may
 python3 -m unittest discover tests
 ```
 
-### 2. Train and Run the Unsupervised ML Model:
+### 2. Train and Run the Supervised Safety Classifier:
 ```bash
-# Train K-Means centroids and compute threshold
-python3 ml_unsupervised/train_kmeans.py
+# Check dataset quota gate (requires >= 100 dangerous images in data/raw/dangerous_manual/)
+python3 ml_supervised/sources_registry.py
 
-# Test anomaly detection on any image file
-python3 ml_unsupervised/detect_anomaly.py path/to/image.jpg
+# Generate contact sheet for human visual audit before training
+python3 ml_supervised/inspect_grid.py
+
+# Train calibrated classifier on CLIP embeddings
+python3 ml_supervised/train_mvp.py
+
+# Evaluate test metrics and worst false positives/negatives
+python3 ml_supervised/evaluate.py
 ```
 
 ### 3. Launch the Interactive Web Dashboard:
@@ -191,7 +205,7 @@ python3 web/app.py
    ```bash
    cd terraform
    cp terraform.tfvars.example terraform.tfvars
-   # Configure alert_email and aws_region in terraform.tfvars
+   # Configure alert_email, aws_region, and engine (default: CLIP_SUPERVISED)
 
    terraform init
    terraform plan
@@ -203,8 +217,9 @@ python3 web/app.py
      ```bash
      aws s3 cp image.jpg s3://$(terraform output -raw s3_bucket_name)/
      ```
-   - Check DynamoDB for the generated analysis record and ML anomaly score.
-   - If an anomaly is detected, check your inbox for an instant SNS security alert.
+   - Check DynamoDB for the classification result and confidence score.
+   - If marked `REVIEW`, the image is automatically copied to `pending_review/` with Glacier lifecycle transitions.
+   - If marked `DANGEROUS`, an immediate SNS security alert email is delivered.
 
 4. **Cleanup (Zero cost):**
    ```bash

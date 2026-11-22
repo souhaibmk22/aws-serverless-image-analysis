@@ -183,30 +183,6 @@ This is a learning project. The classifier is trained on public datasets and may
 
 ---
 
-## 💼 Resume & Portfolio Highlights (Ready for CV / LinkedIn)
-
-> **Target Roles:** Cloud Engineer / AWS Solutions Architect / MLOps Engineer / Backend Developer
-
-### 📌 English Entry (Resume / LinkedIn)
-**Serverless Image Safety & Threat Classification Pipeline** | *AWS, Terraform, Python, CLIP, MLOps*
-- **Event-Driven Architecture:** Architected an asynchronous media processing pipeline on AWS (S3, Lambda, DynamoDB, SNS) handling image uploads with sub-50ms end-to-end latency and 100% on-demand billing (zero idle costs).
-- **Serverless Edge ML:** Integrated an OpenAI CLIP (ViT-B/32) feature extractor and calibrated linear probe into AWS Lambda via pure NumPy matrix operations ($<5\text{ms}$ execution, zero GPU requirement), verified mathematically equivalent to HuggingFace (cosine similarity $1.000000$).
-- **Cost Optimization & FinOps:** Implemented automated S3 lifecycle rules transitioning human review queues (`pending_review/`) to Amazon S3 Glacier after 30 days and expiring them at 90 days, alongside DynamoDB Pay-Per-Request pricing.
-- **Production MLOps Rigor:** Designed a 3-tier routing policy (`SAFE`, `REVIEW`, `DANGEROUS`) with Platt probability calibration, stratified group cross-validation with perceptual hash (`pHash`) deduplication, and production precision reporting calibrated for low-prevalence base rates (1% and 0.1%).
-- **Infrastructure as Code & CI/CD:** Automated 100% of AWS infrastructure using HashiCorp Terraform modules adhering to IAM least-privilege principles, backed by automated GitHub Actions CI testing.
-
----
-
-### 📌 Entrée pour CV / LinkedIn (Français)
-**Pipeline Serverless d'Analyse d'Images & Modération IA** | *AWS, Terraform, Python, CLIP, MLOps*
-- **Architecture Event-Driven :** Conception et déploiement d'un pipeline cloud serverless asynchrone sur AWS (S3, Lambda, DynamoDB, SNS) avec temps de réponse global $<50\text{ms}$ et facturation 100% à l'usage (zéro coût à l'arrêt).
-- **IA en Production (Serverless ML) :** Intégration d'un classifieur de sécurité basé sur les embeddings CLIP ViT-B/32 dans AWS Lambda via une inférence matricielle pure NumPy ($<5\text{ms}$, sans dépendance GPU ni framework lourd), validée à 100% de parité cosinus avec HuggingFace.
-- **FinOps & Cycle de Vie :** Configuration de règles de cycle de vie Amazon S3 (archivage automatique vers S3 Glacier à 30 jours, expiration à 90 jours) et tarification On-Demand DynamoDB pour minimiser l'empreinte financière.
-- **Rigueur MLOps & Données :** Implémentation d'une politique de routage à 3 états (`SAFE`, `REVIEW`, `DANGEROUS`), étalonnage des probabilités par sigmoïde, élimination des fuites de données par hachage perceptuel (`pHash`) et modélisation de la précision aux prévalences réelles (1% et 0.1%).
-- **Infrastructure as Code & CI/CD :** Déploiement automatisé via Terraform (respect du principe de moindre privilège IAM) et pipeline d'intégration continue GitHub Actions.
-
----
-
 ## 🧪 Testing Locally
 
 ### 1. Run Automated Unit Tests:
